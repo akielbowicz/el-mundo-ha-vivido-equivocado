@@ -74,7 +74,7 @@ body {
 
 /* ── Header ────────────────────────────── */
 
-header[role="banner"] {
+header {
   padding: 2rem 0 1.5rem;
   border-bottom: 1px solid var(--color-border);
   background: var(--color-bg);
@@ -215,7 +215,7 @@ cite {
 
 /* ── Footer ────────────────────────────── */
 
-footer[role="contentinfo"] {
+footer {
   padding: 1.5rem 0;
   border-top: 1px solid var(--color-border);
   font-family: var(--font-ui);
@@ -241,6 +241,14 @@ footer[role="contentinfo"] {
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+}
+
+/* ── Print ─────────────────────────────── */
+
+@media print {
+  header, footer, nav, .skip-link { display: none; }
+  body { color: #000; background: #fff; }
+  a { text-decoration: underline; }
 }
 
 /* ── Responsive ────────────────────────── */

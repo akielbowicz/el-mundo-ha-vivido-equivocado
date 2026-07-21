@@ -7,9 +7,6 @@ pre-commit:
     reader-mode:
       glob: "*.html"
       run: node scripts/check-reader-mode.mjs {staged_files}
-    stylelint:
-      glob: "*.css"
-      run: npx html-validate --config .htmlvalidate.json {staged_files}
 
 pre-push:
   parallel: false

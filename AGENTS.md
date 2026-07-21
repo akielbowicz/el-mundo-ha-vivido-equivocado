@@ -10,7 +10,7 @@
 | Language | Clojure (via [Squint](https://github.com/squint-cljs/squint)) → vanilla JS |
 | Build | `just build` (compile squint → `dist/`) |
 | Serve | `just serve` (serve on :8080) |
-| Lint / a11y | `html-validate` + `pa11y` + `check-reader-mode.mjs` |
+| Lint / a11y | `html-validate` + `check-reader-mode.mjs` |
 | Hooks | [Lefthook](https://github.com/evilmartians/lefthook) — pre-commit + pre-push |
 | Deploy | GH Actions → `actions/deploy-pages@v4` |
 | DNS | Cloudflare (proxy naranja), delegado desde nic.ar |
@@ -25,7 +25,7 @@
 │   └── CNAME              # dominio (equivocados.ar)
 ├── scripts/
 │   ├── check-reader-mode.mjs  # valida compatibilidad con Firefox Reader Mode
-│   └── a11y-audit.mjs         # pa11y audit sobre el sitio construido
+│   └── a11y-audit.mjs         # html-validate con reglas a11y sobre el built
 ├── dist/                  # build output (gitignored)
 ├── squint.edn             # config squint
 ├── lefthook.yml           # pre-commit + pre-push hooks
@@ -43,7 +43,7 @@
 | `serve` | build + sirve en http://localhost:8080 |
 | `watch` | recompila al cambiar src/ |
 | `check-html` | valida HTML semántico + compatibilidad con Reader Mode |
-| `check-a11y` | pa11y audit (axe-core) sobre el built |
+| `check-a11y` | html-validate con reglas a11y sobre el built |
 | `check` | todos los checks |
 | `clean` | rm -rf dist node_modules |
 
@@ -58,6 +58,7 @@
 
 - Cada push a `main` → build + deploy automático a GH Pages
 - Workflow: `actions/configure-pages@v5` → `upload-pages-artifact@v3` (path: `dist`) → `deploy-pages@v4`
+- Incluye validación HTML previa al build
 - No usa rama `gh-pages`
 
 ## Domain
@@ -78,7 +79,7 @@
 - El HTML es **completamente renderizado en servidor** — el contenido es visible sin JS
 - Reader Mode de Firefox se activa automáticamente: `<article>`, `<main>`, `lang`, headings, meta desc
 - Skip-link al inicio, landmarks ARIA, focus-visible, prefers-reduced-motion
-- Pa11y + axe-core en CI y pre-push
+- Validación a11y con `html-validate` (reglas WCAG) en pre-commit, pre-push y CI
 
 ## Notes
 

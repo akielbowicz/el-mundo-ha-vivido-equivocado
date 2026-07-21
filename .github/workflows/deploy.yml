@@ -25,9 +25,13 @@ jobs:
           node-version: 20
           cache: npm
 
-      - name: Build site
+      - name: Validate HTML
         run: |
           npm install --silent
+          npx html-validate resources/index.html
+
+      - name: Build site
+        run: |
           npx squint compile
           cp resources/CNAME dist/
 

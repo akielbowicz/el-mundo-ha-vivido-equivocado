@@ -10,7 +10,7 @@ build: install dist
     cp resources/CNAME dist/
 
 serve: install build
-    npx serve dist -p 8080 --no-clipboard
+    serve dist -p 8080 --no-clipboard
 
 watch: install
     npx squint watch
