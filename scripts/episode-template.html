@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="{{description}}">
+<title>{{title}} — El mundo ha vivido equivocado</title>
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<a href="#main-content" class="skip-link">Saltar al contenido principal</a>
+<header>
+<div class="container">
+<p class="breadcrumb"><a href="/">Inicio</a> / <a href="/episodios/">Episodios</a> / {{title}}</p>
+<h1 class="site-title">{{title}}</h1>
+<p class="site-tagline">{{description}}</p>
+<nav aria-label="Principal">
+<ul>
+<li><a href="/">Inicio</a></li>
+<li><a href="/episodios/" aria-current="page">Episodios</a></li>
+<li><a href="/sobre/">Sobre el programa</a></li>
+<li><a href="/contacto/">Contacto</a></li>
+</ul>
+</nav>
+<div class="search-container" role="search">
+<label for="search-input" class="sr-only">Buscar episodios</label>
+<input id="search-input" type="search" placeholder="Buscar episodios…" autocomplete="off">
+<ul id="search-results" role="listbox" hidden></ul>
+<noscript><p class="search-noscript"><a href="/episodios/">Ver todos los episodios</a></p></noscript>
+</div>
+</div>
+</header>
+<main id="main-content">
+<article>
+<div class="container">
+<header>
+<p class="episode-meta">
+<time datetime="{{date_iso}}">{{date_display}}</time>
+{{#authors}} · por {{authors}}{{/authors}}
+</p>
+</header>
+{{#audio}}
+<section class="episode-audio" aria-label="Reproductor de audio">
+<audio controls preload="metadata" src="{{audio}}">
+Tu navegador no soporta el elemento de audio.
+</audio>
+<p class="audio-download"><a href="{{audio}}" download>Descargar audio</a></p>
+</section>
+{{/audio}}
+{{#youtube}}
+<section class="episode-video" aria-label="Video del episodio">
+<div class="video-wrapper">
+<iframe src="https://www.youtube-nocookie.com/embed/{{youtube_id}}" title="Video: {{title}}" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+</div>
+<p class="video-link"><a href="https://www.youtube.com/watch?v={{youtube_id}}">Ver en YouTube</a></p>
+</section>
+{{/youtube}}
+{{#image}}
+<figure class="episode-image">
+<img src="{{image}}" alt="{{image_alt}}" loading="lazy">
+{{#caption}}<figcaption>{{caption}}</figcaption>{{/caption}}
+</figure>
+{{/image}}
+<div class="episode-content">
+{{content}}
+</div>
+</div>
+</article>
+<nav class="episode-nav" aria-label="Navegación entre episodios">
+<div class="container">
+{{#prev}}<a href="/episodios/{{slug}}/" class="prev">← {{title}}</a>{{/prev}}
+{{#next}}<a href="/episodios/{{slug}}/" class="next">{{title}} →</a>{{/next}}
+</div>
+</nav>
+</main>
+<footer>
+<div class="container">
+<p>© 2026 El mundo ha vivido equivocado</p>
+</div>
+</footer>
+<script type="module" src="/core.mjs"></script>
+</body>
+</html>

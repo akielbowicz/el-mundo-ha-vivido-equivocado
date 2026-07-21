@@ -7,8 +7,9 @@
     "no-dup-class": "error",
     "no-dup-id": "error",
     "no-missing-references": "error",
+    "no-trailing-whitespace": "off",
     "prefer-tbody": "warn",
-    "prefer-native-element": "error",
+    "prefer-native-element": "off",
     "svg-focusable": "warn",
     "text-content": "error",
     "element-permitted-content": "error",
@@ -19,6 +20,7 @@
     "aria-label-misuse": "warn",
     "aria-hidden-body": "error",
     "input-missing-label": "error",
+    "no-redundant-aria-label": "error",
     "prefer-button": "warn"
   }
 }

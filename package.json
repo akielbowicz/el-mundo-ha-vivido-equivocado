@@ -3,8 +3,10 @@
   "private": true,
   "type": "module",
   "devDependencies": {
+    "gray-matter": "^4.0.3",
     "html-validate": "^11.5.6",
     "lefthook": "^2.1.10",
+    "marked": "^18.0.7",
     "serve": "^14",
     "squint-cljs": "^0.14.206"
   },

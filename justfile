@@ -7,6 +7,7 @@ install:
 build: install dist
     set -eo pipefail; \
     npx squint compile && \
+    node scripts/build-episodes.mjs && \
     cp resources/CNAME dist/
 
 serve: install build
@@ -26,6 +27,10 @@ check-a11y: install
 
 # Run all checks
 check: check-html check-a11y
+
+# Create a new episode from interactive prompts
+new-episode:
+    node scripts/new-episode.mjs
 
 clean:
     rm -rf dist node_modules
