@@ -107,19 +107,19 @@ async function main() {
     const raw = readFileSync(path, "utf-8");
     const { data: fm, content } = yaml(raw);
 
+    // Status: skip drafts before any validation
+    const episodeStatus = (fm.status || "published").toLowerCase();
+    if (episodeStatus !== "published") {
+      console.log(`  - ${file}: status "${fm.status || ""}" — skipped`);
+      continue;
+    }
+
     // Validate required fields
     const required = ["title", "date", "description", "authors"];
     for (const field of required) {
       if (!fm[field]) {
         throw new Error(`${file}: missing required frontmatter field "${field}"`);
       }
-    }
-
-    // Status: skip drafts
-    const episodeStatus = (fm.status || "published").toLowerCase();
-    if (episodeStatus !== "published") {
-      console.log(`  - ${file}: status "${episodeStatus}" — skipped`);
-      continue;
     }
 
     // Slug
