@@ -2,6 +2,9 @@
   "name": "el-mundo-ha-vivido-equivocado",
   "private": true,
   "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
   "devDependencies": {
     "gray-matter": "^4.0.3",
     "html-validate": "^11.5.6",
