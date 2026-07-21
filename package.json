@@ -2,12 +2,8 @@
   "name": "el-mundo-ha-vivido-equivocado",
   "private": true,
   "type": "module",
-  "scripts": {
-    "build": "just build",
-    "serve": "just serve",
-    "watch": "just watch"
-  },
   "devDependencies": {
+    "serve": "^14",
     "squint-cljs": "^0.14.206"
   }
 }

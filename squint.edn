@@ -1,4 +1,4 @@
-;; contents generated at https://github.com/squint-cljs/squint/issues/230
+;; source paths for .cljs files; copy-resources matches by extension
 {:paths ["src" "resources"]
  :output-dir "dist"
  :copy-resources [:css :html]

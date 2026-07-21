@@ -5,13 +5,14 @@ install:
     npm install --silent
 
 build: install dist
-    npx squint compile
+    set -eo pipefail; \
+    npx squint compile && \
     cp resources/CNAME dist/
 
-serve: build
+serve: install build
     npx serve dist -p 8080 --no-clipboard
 
-watch:
+watch: install
     npx squint watch
 
 clean:
