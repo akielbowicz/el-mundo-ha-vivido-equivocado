@@ -115,6 +115,13 @@ async function main() {
       }
     }
 
+    // Status: skip drafts
+    const episodeStatus = (fm.status || "published").toLowerCase();
+    if (episodeStatus !== "published") {
+      console.log(`  - ${file}: status "${episodeStatus}" — skipped`);
+      continue;
+    }
+
     // Slug
     const slug = fm.slug || slugify(fm.title);
 

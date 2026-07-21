@@ -36,6 +36,7 @@ async function main() {
   const date = await ask("  Fecha (ISO 8601, ej: 2026-07-21): ") || new Date().toISOString().split("T")[0];
   const description = await ask("  Descripción breve: ");
   const authors = await ask("  Autor/es (separados por coma): ");
+  const status = (await ask("  Estado (published/draft) [draft]: ")) || "draft";
   const slug = slugify(title);
 
   const outPath = join(EPISODIOS_DIR, `${slug}.md`);
@@ -48,6 +49,7 @@ async function main() {
   const frontmatter = `---
 title: "${title}"
 date: "${date}"
+status: ${status}
 description: "${description}"
 authors:
 ${authors.split(",").map(a => `  - "${a.trim()}"`).join("\n")}

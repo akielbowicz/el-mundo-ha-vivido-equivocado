@@ -1,6 +1,7 @@
 ---
 title: "La noche boca arriba"
 date: "2026-08-04"
+status: published
 description: "Leemos La noche boca arriba de Julio Cortázar y exploramos el umbral entre el sueño y la vigilia."
 authors:
   - "Sasha"

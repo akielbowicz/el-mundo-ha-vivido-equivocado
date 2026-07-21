@@ -1,6 +1,7 @@
 ---
 title: "El Aleph"
 date: "2026-07-21"
+status: published
 description: "Leemos y comentamos El Aleph de Jorge Luis Borges. ¿Qué significa encontrar el punto que contiene todos los puntos?"
 authors:
   - "Sasha"

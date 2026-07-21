@@ -22,6 +22,18 @@ Each episode `.md` file SHALL contain frontmatter with these fields.
 - **WHEN** parsed by the build pipeline
 - **THEN** the frontmatter MUST include: `title`, `date` (ISO 8601), `description`, `authors`
 
+#### Scenario: Status field
+- **GIVEN** an episode `.md` file with `status: draft` in frontmatter
+- **WHEN** `just build` runs
+- **THEN** the episode is skipped (not rendered, not included in index or search)
+- **AND** a message is printed: `file.md: status "draft" — skipped`
+- **AND** the build exits successfully (non-draft episodes are unaffected)
+
+#### Scenario: Status defaults to published
+- **GIVEN** an episode `.md` file without a `status` field
+- **WHEN** `just build` runs
+- **THEN** the episode is treated as published and rendered normally
+
 #### Scenario: Optional fields
 - **GIVEN** an episode `.md` file
 - **WHEN** parsed by the build pipeline
