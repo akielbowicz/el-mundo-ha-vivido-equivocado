@@ -2,4 +2,5 @@
 {:paths ["src" "resources"]
  :output-dir "dist"
  :copy-resources [:css :html]
- :extension ".mjs"}
+ :extension ".mjs"
+ :elide-imports true}
