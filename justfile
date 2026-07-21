@@ -8,6 +8,7 @@ build: install dist
     set -eo pipefail; \
     npx squint compile && \
     node scripts/build-episodes.mjs && \
+    node scripts/build-org-pages.mjs && \
     cp resources/CNAME dist/
 
 serve: install build
