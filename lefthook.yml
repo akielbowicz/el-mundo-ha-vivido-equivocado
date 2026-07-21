@@ -1,0 +1,22 @@
+pre-commit:
+  parallel: true
+  commands:
+    html-validate:
+      glob: "*.html"
+      run: npx html-validate --config .htmlvalidate.json {staged_files}
+    reader-mode:
+      glob: "*.html"
+      run: node scripts/check-reader-mode.mjs {staged_files}
+    stylelint:
+      glob: "*.css"
+      run: npx html-validate --config .htmlvalidate.json {staged_files}
+
+pre-push:
+  parallel: false
+  commands:
+    build:
+      run: just build
+    validate-built:
+      run: npx html-validate --config .htmlvalidate.json dist/index.html
+    a11y-audit:
+      run: node scripts/a11y-audit.mjs

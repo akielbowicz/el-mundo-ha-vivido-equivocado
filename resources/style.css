@@ -1,7 +1,252 @@
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-html { font-family: system-ui, -apple-system, sans-serif; }
+/* ═══════════════════════════════════════════
+   El mundo ha vivido equivocado — Styles
+   ═══════════════════════════════════════════ */
+
+/* ── Reset & Variables ─────────────────── */
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
 
 :root {
-  /* --color-primary: ... */
-  /* --spacing-unit: ... */
+  --color-bg:          #faf9f6;
+  --color-text:        #1a1a1a;
+  --color-accent:      #8b3a3a;
+  --color-accent-hover:#6b2a2a;
+  --color-muted:       #555;
+  --color-border:      #ddd;
+  --color-skip-focus:  #fff;
+
+  --font-body:    "Georgia", "Times New Roman", serif;
+  --font-heading: "Georgia", "Times New Roman", serif;
+  --font-ui:      system-ui, -apple-system, sans-serif;
+
+  --max-width:    42rem;
+  --spacing-unit: 1.5rem;
+}
+
+/* ── Base ──────────────────────────────── */
+
+html {
+  font-family: var(--font-body);
+  font-size: 112.5%;              /* 18px base */
+  line-height: 1.75;
+  color: var(--color-text);
+  background: var(--color-bg);
+  scroll-behavior: smooth;
+}
+
+body {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Skip Link ─────────────────────────── */
+
+.skip-link {
+  position: absolute;
+  top: -100%;
+  left: 1rem;
+  z-index: 100;
+  padding: 0.5rem 1rem;
+  background: var(--color-text);
+  color: var(--color-skip-focus);
+  font-family: var(--font-ui);
+  font-size: 0.875rem;
+  text-decoration: none;
+  border-radius: 0 0 4px 4px;
+}
+
+.skip-link:focus {
+  top: 0;
+}
+
+/* ── Container ─────────────────────────── */
+
+.container {
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+/* ── Header ────────────────────────────── */
+
+header[role="banner"] {
+  padding: 2rem 0 1.5rem;
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-bg);
+}
+
+.site-title {
+  font-family: var(--font-heading);
+  font-size: 2rem;
+  line-height: 1.2;
+  color: var(--color-accent);
+}
+
+.site-tagline {
+  font-family: var(--font-ui);
+  font-size: 0.95rem;
+  color: var(--color-muted);
+  margin-top: 0.25rem;
+}
+
+/* ── Navigation ────────────────────────── */
+
+nav {
+  margin-top: 1rem;
+}
+
+nav ul {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1rem;
+}
+
+nav a {
+  font-family: var(--font-ui);
+  font-size: 0.925rem;
+  color: var(--color-text);
+  text-decoration: none;
+  padding: 0.25rem 0;
+  border-bottom: 2px solid transparent;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+nav a:hover,
+nav a:focus-visible {
+  color: var(--color-accent);
+  border-bottom-color: var(--color-accent);
+}
+
+nav a[aria-current="page"] {
+  color: var(--color-accent);
+  border-bottom-color: var(--color-accent);
+}
+
+/* ── Main / Sections ───────────────────── */
+
+main {
+  flex: 1;
+  padding: 2rem 0;
+}
+
+section {
+  margin-bottom: 2.5rem;
+}
+
+h2 {
+  font-family: var(--font-heading);
+  font-size: 1.5rem;
+  margin-bottom: 1rem;
+  color: var(--color-text);
+}
+
+h3 {
+  font-family: var(--font-heading);
+  font-size: 1.15rem;
+  margin-bottom: 0.25rem;
+}
+
+p {
+  margin-bottom: 1rem;
+  max-width: 70ch;
+}
+
+a {
+  color: var(--color-accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  transition: color 0.15s;
+}
+
+a:hover,
+a:focus-visible {
+  color: var(--color-accent-hover);
+}
+
+/* ── Episodes ──────────────────────────── */
+
+article {
+  margin-bottom: 1.5rem;
+  padding: 1rem 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+article:last-of-type {
+  border-bottom: none;
+}
+
+article header time,
+time {
+  font-family: var(--font-ui);
+  font-size: 0.85rem;
+  color: var(--color-muted);
+}
+
+.more-link {
+  display: inline-block;
+  font-family: var(--font-ui);
+  font-size: 0.925rem;
+  margin-top: 0.5rem;
+}
+
+cite {
+  font-style: italic;
+}
+
+.episode-list {
+  list-style: none;
+}
+
+.episode-list li article {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding: 0.75rem 0;
+}
+
+.episode-list li + li {
+  border-top: 1px solid var(--color-border);
+}
+
+/* ── Footer ────────────────────────────── */
+
+footer[role="contentinfo"] {
+  padding: 1.5rem 0;
+  border-top: 1px solid var(--color-border);
+  font-family: var(--font-ui);
+  font-size: 0.85rem;
+  color: var(--color-muted);
+  text-align: center;
+}
+
+/* ── Focus ─────────────────────────────── */
+
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+/* ── Reduced Motion ────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ── Responsive ────────────────────────── */
+
+@media (max-width: 480px) {
+  html { font-size: 100%; }
+  .site-title { font-size: 1.5rem; }
+  nav ul { flex-direction: column; gap: 0.25rem; }
 }

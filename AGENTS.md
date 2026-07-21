@@ -10,6 +10,8 @@
 | Language | Clojure (via [Squint](https://github.com/squint-cljs/squint)) → vanilla JS |
 | Build | `just build` (compile squint → `dist/`) |
 | Serve | `just serve` (serve on :8080) |
+| Lint / a11y | `html-validate` + `pa11y` + `check-reader-mode.mjs` |
+| Hooks | [Lefthook](https://github.com/evilmartians/lefthook) — pre-commit + pre-push |
 | Deploy | GH Actions → `actions/deploy-pages@v4` |
 | DNS | Cloudflare (proxy naranja), delegado desde nic.ar |
 
@@ -18,12 +20,17 @@
 ```
 ├── src/core.cljs          # entrada squint → dist/core.mjs
 ├── resources/
-│   ├── index.html         # HTML template
-│   ├── style.css          # estilos
+│   ├── index.html         # HTML semántico completo (lector modo-ready)
+│   ├── style.css          # estilos a11y, responsive, prefers-reduced-motion
 │   └── CNAME              # dominio (equivocados.ar)
+├── scripts/
+│   ├── check-reader-mode.mjs  # valida compatibilidad con Firefox Reader Mode
+│   └── a11y-audit.mjs         # pa11y audit sobre el sitio construido
 ├── dist/                  # build output (gitignored)
 ├── squint.edn             # config squint
-├── justfile               # build, serve, watch, clean
+├── lefthook.yml           # pre-commit + pre-push hooks
+├── .htmlvalidate.json     # reglas de validación HTML + a11y
+├── justfile               # build, serve, check, clean
 ├── .github/workflows/deploy.yml
 └── AGENTS.md              # este archivo
 ```
@@ -35,7 +42,17 @@
 | `build` | npm install → squint compile → cp CNAME → dist/ |
 | `serve` | build + sirve en http://localhost:8080 |
 | `watch` | recompila al cambiar src/ |
+| `check-html` | valida HTML semántico + compatibilidad con Reader Mode |
+| `check-a11y` | pa11y audit (axe-core) sobre el built |
+| `check` | todos los checks |
 | `clean` | rm -rf dist node_modules |
+
+## Lefthook hooks
+
+| Hook | Comandos |
+|------|----------|
+| `pre-commit` | `html-validate` + `check-reader-mode` en paralelo sobre files staged |
+| `pre-push` | `just build` → `html-validate dist/` → `a11y-audit` |
 
 ## CI/CD
 
@@ -55,6 +72,13 @@
 - `:copy-resources [:css :html]` — solo copia archivos .css y .html de `resources/` a `dist/`
 - Si se agrega un nuevo tipo de recurso (svg, json, fonts, imágenes), hay que añadirlo a `:copy-resources` en `squint.edn`
 - `:extension ".mjs"` — modules ES
+
+## Accessibility & Reader Mode
+
+- El HTML es **completamente renderizado en servidor** — el contenido es visible sin JS
+- Reader Mode de Firefox se activa automáticamente: `<article>`, `<main>`, `lang`, headings, meta desc
+- Skip-link al inicio, landmarks ARIA, focus-visible, prefers-reduced-motion
+- Pa11y + axe-core en CI y pre-push
 
 ## Notes
 

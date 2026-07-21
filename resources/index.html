@@ -3,11 +3,80 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>El mundo ha vivido equivocado</title>
+  <meta name="description" content="Programa de radio donde leemos cuentos y comentamos la experiencia de la lectura.">
+  <title>El mundo ha vivido equivocado — Radio</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div id="app"></div>
+  <a href="#main-content" class="skip-link">Saltar al contenido principal</a>
+
+  <header>
+    <div class="container">
+      <h1 class="site-title">El mundo ha vivido equivocado</h1>
+      <p class="site-tagline">Un programa de radio sobre cuentos y lectura</p>
+      <nav aria-label="Principal">
+        <ul>
+          <li><a href="/" aria-current="page">Inicio</a></li>
+          <li><a href="/episodios/">Episodios</a></li>
+          <li><a href="/sobre/">Sobre el programa</a></li>
+          <li><a href="/contacto/">Contacto</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main-content">
+    <section aria-labelledby="ultimo-episodio-titulo">
+      <div class="container">
+        <h2 id="ultimo-episodio-titulo">Último episodio</h2>
+        <article aria-labelledby="ep-1-titulo">
+          <header>
+            <h3 id="ep-1-titulo">Episodio 1: El Aleph</h3>
+            <time datetime="2026-07-21">21 de julio de 2026</time>
+          </header>
+          <p>Leemos y comentamos <cite>El Aleph</cite> de Jorge Luis Borges. ¿Qué significa encontrar el punto que contiene todos los puntos?</p>
+          <a href="/episodios/1/" class="more-link" aria-label="Escuchar Episodio 1: El Aleph">Escuchar episodio →</a>
+        </article>
+      </div>
+    </section>
+
+    <section aria-labelledby="proximos-titulo">
+      <div class="container">
+        <h2 id="proximos-titulo">Próximas lecturas</h2>
+        <ul class="episode-list">
+          <li>
+            <article>
+              <h3>Episodio 2: La noche boca arriba</h3>
+              <p><cite>La noche boca arriba</cite> — Julio Cortázar</p>
+              <time datetime="2026-08-04">4 de agosto de 2026</time>
+            </article>
+          </li>
+          <li>
+            <article>
+              <h3>Episodio 3: El Sur</h3>
+              <p><cite>El Sur</cite> — Jorge Luis Borges</p>
+              <time datetime="2026-08-18">18 de agosto de 2026</time>
+            </article>
+          </li>
+        </ul>
+      </div>
+    </section>
+
+    <section aria-labelledby="sobre-titulo">
+      <div class="container">
+        <h2 id="sobre-titulo">Sobre el programa</h2>
+        <p>Un espacio donde la lectura se comparte en voz alta. Cada episodio elegimos un cuento, lo leemos juntos y conversamos sobre lo que nos pasa al leerlo: las imágenes que aparecen, las preguntas que quedan, los silencios.</p>
+        <p>Porque el mundo ha vivido equivocado — y tal vez la literatura sea una forma de desandar el error.</p>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="container">
+      <p>© 2026 El mundo ha vivido equivocado</p>
+    </div>
+  </footer>
+
   <script type="module" src="core.mjs"></script>
 </body>
 </html>
