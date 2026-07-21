@@ -6,16 +6,16 @@
  * Usage: node scripts/build-episodes.mjs
  */
 
-import { readFileSync, writeFileSync, mkdirSync, existsSync } from "node:fs";
+import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { readdir } from "node:fs/promises";
-import { join, dirname } from "node:path";
+import { join } from "node:path";
 import { marked } from "marked";
 import yaml from "gray-matter";
 
 // Shift markdown headings down one level (h1→h2, h2→h3, etc.)
 // so the page <h1> is the episode title from frontmatter.
 const renderer = {
-  heading({ text, depth, tokens }) {
+  heading({ text, depth }) {
     const nextLevel = Math.min(depth + 1, 6);
     return `<h${nextLevel}>${text}</h${nextLevel}>`;
   },
@@ -31,7 +31,7 @@ const TEMPLATE = readFileSync("scripts/episode-template.html", "utf-8");
 function slugify(title) {
   return title
     .toLowerCase()
-    .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // remove accents
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-|-$/g, "");
 }
@@ -44,7 +44,7 @@ function formatDate(iso) {
 }
 
 function renderTemplate(template, vars) {
-  // Handle conditional blocks: {{#key}}...{{/key}}
+  // Conditional blocks: {{#key}}...{{/key}}
   let result = template.replace(
     /\{\{#(\w+)}}([\s\S]*?)\{\{\/\1}}/g,
     (_, key, block) => {
@@ -52,7 +52,6 @@ function renderTemplate(template, vars) {
       if (val === undefined || val === null || val === false || val === "") {
         return "";
       }
-      // If the value is an object, render with its properties
       if (typeof val === "object" && !Array.isArray(val)) {
         return renderTemplate(block, { ...vars, ...val });
       }
@@ -60,7 +59,7 @@ function renderTemplate(template, vars) {
     },
   );
 
-  // Simple variable replacement
+  // Variable replacement
   result = result.replace(/\{\{(\w+)}}/g, (_, key) => {
     const val = vars[key];
     return val !== undefined && val !== null ? String(val) : "";
@@ -73,7 +72,7 @@ function parseYouTubeId(url) {
   if (!url) return null;
   const patterns = [
     /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]+)/,
-    /^([a-zA-Z0-9_-]{11})$/,  // raw ID
+    /^([a-zA-Z0-9_-]{11})$/,
   ];
   for (const p of patterns) {
     const m = url.match(p);
@@ -98,8 +97,10 @@ async function main() {
     return;
   }
 
-  const episodes = [];
+  const episodeData = [];  // { slug, title, date, bodyHtml, ctx, meta }
   const slugs = new Map();
+
+  /* ── First pass: parse, validate, render, write ── */
 
   for (const file of files) {
     const path = join(EPISODIOS_DIR, file);
@@ -116,7 +117,6 @@ async function main() {
 
     // Slug
     const slug = fm.slug || slugify(fm.title);
-    fm.slug = slug;
 
     // Check duplicate slug
     if (slugs.has(slug)) {
@@ -132,22 +132,33 @@ async function main() {
       youtubeId = validateYouTube(fm.youtube);
     }
 
-    // Validate date parseable
+    // Validate date
     const date = new Date(fm.date);
     if (isNaN(date.getTime())) {
-      throw new Error(`${file}: invalid date "${fm.date}"`);
+      throw new Error(
+        `${file}: invalid date "${fm.date}" — expected ISO 8601 (e.g., 2026-07-21)`,
+      );
+    }
+
+    // Warn if image without alt text
+    if (fm.image && !fm.image_alt) {
+      console.warn(`  ⚠ ${file}: image provided without image_alt (using decorative alt="")`);
     }
 
     // Render markdown body
     const bodyHtml = marked.parse(content);
 
-    // Build context for template
+    // Build authors string
+    const authors = Array.isArray(fm.authors)
+      ? fm.authors.join(", ")
+      : fm.authors;
+
     const ctx = {
       title: fm.title,
       description: fm.description,
       date_iso: fm.date,
       date_display: formatDate(fm.date),
-      authors: Array.isArray(fm.authors) ? fm.authors.join(", ") : fm.authors,
+      authors,
       audio: fm.audio || "",
       youtube: fm.youtube ? true : false,
       youtube_id: youtubeId || "",
@@ -156,79 +167,58 @@ async function main() {
       content: bodyHtml,
     };
 
-    // Template rendering
     const html = renderTemplate(TEMPLATE, ctx);
 
-    // Write episode page
     const outDir = join(DIST_DIR, "episodios", slug);
     mkdirSync(outDir, { recursive: true });
     writeFileSync(join(outDir, "index.html"), html);
 
-    episodes.push({
-      title: fm.title,
+    episodeData.push({
       slug,
+      title: fm.title,
       date: fm.date,
       description: fm.description,
-      authors: ctx.authors,
-      audio: fm.audio || false,
-      youtube: fm.youtube || false,
-      image: fm.image || false,
+      authors,
+      audio: !!fm.audio,
+      youtube: !!fm.youtube,
+      image: !!fm.image,
       tags: fm.tags || [],
+      bodyHtml,
+      ctx,
     });
 
     console.log(`  ✓ ${slug}/index.html — ${fm.title}`);
   }
 
-  // Sort episodes by date descending
-  episodes.sort((a, b) => new Date(b.date) - new Date(a.date));
+  // Sort by date descending
+  episodeData.sort((a, b) => new Date(b.date) - new Date(a.date));
 
-  // Add prev/next navigation
-  for (let i = 0; i < episodes.length; i++) {
-    const ep = episodes[i];
-    const prev = i > 0 ? episodes[i - 1] : null;
-    const next = i < episodes.length - 1 ? episodes[i + 1] : null;
+  /* ── Second pass: prev/next navigation ── */
 
-    // Re-render template with prev/next
-    const mdFile = files.find(f => {
-      const raw = readFileSync(join(EPISODIOS_DIR, f), "utf-8");
-      const { data } = yaml(raw);
-      return (data.slug || slugify(data.title)) === ep.slug;
-    });
-    if (!mdFile) continue;
+  for (let i = 0; i < episodeData.length; i++) {
+    const ep = episodeData[i];
+    const prev = i > 0 ? episodeData[i - 1] : null;
+    const next = i < episodeData.length - 1 ? episodeData[i + 1] : null;
 
-    const raw = readFileSync(join(EPISODIOS_DIR, mdFile), "utf-8");
-    const { data: fm, content } = yaml(raw);
-    const bodyHtml = marked.parse(content);
-
-    const ctx = {
-      title: fm.title,
-      description: fm.description,
-      date_iso: fm.date,
-      date_display: formatDate(fm.date),
-      authors: Array.isArray(fm.authors) ? fm.authors.join(", ") : fm.authors,
-      audio: fm.audio || "",
-      youtube: fm.youtube ? true : false,
-      youtube_id: parseYouTubeId(fm.youtube) || "",
-      image: fm.image || "",
-      image_alt: fm.image_alt || "",
-      content: bodyHtml,
+    const html = renderTemplate(TEMPLATE, {
+      ...ep.ctx,
       prev: prev ? { slug: prev.slug, title: prev.title } : null,
       next: next ? { slug: next.slug, title: next.title } : null,
-    };
+    });
 
-    const html = renderTemplate(TEMPLATE, ctx);
-    const outDir = join(DIST_DIR, "episodios", ep.slug);
-    writeFileSync(join(outDir, "index.html"), html);
+    writeFileSync(join(DIST_DIR, "episodios", ep.slug, "index.html"), html);
   }
 
-  // Generate episode index
-  const indexHtml = generateIndex(episodes);
+  /* ── Episode index ── */
+
+  const indexHtml = generateIndex(episodeData);
   mkdirSync(join(DIST_DIR, "episodios"), { recursive: true });
   writeFileSync(join(DIST_DIR, "episodios", "index.html"), indexHtml);
-  console.log(`  ✓ episodios/index.html — ${episodes.length} episodios`);
+  console.log(`  ✓ episodios/index.html — ${episodeData.length} episodios`);
 
-  // Generate search index
-  const searchIndex = episodes.map(ep => ({
+  /* ── Search index ── */
+
+  const searchIndex = episodeData.map(ep => ({
     title: ep.title,
     slug: ep.slug,
     date: ep.date,
@@ -236,10 +226,7 @@ async function main() {
     authors: ep.authors,
     tags: ep.tags,
   }));
-  writeFileSync(
-    join(DIST_DIR, "search-index.json"),
-    JSON.stringify(searchIndex),
-  );
+  writeFileSync(join(DIST_DIR, "search-index.json"), JSON.stringify(searchIndex));
   console.log("  ✓ search-index.json");
 }
 

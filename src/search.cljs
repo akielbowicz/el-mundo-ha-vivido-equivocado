@@ -1,28 +1,30 @@
 (ns el-mundo-ha-vivido-equivocado.search
   "Client-side search for episodes — vanilla JS, no dependencies.")
 
-(defn fetch-index []
-  (try
-    (js/fetch "/search-index.json")
-    (.then % (fn [res] (.json res)))
-    (catch js/Error _
-      (.warn js/console "Search index not available")
-      nil)))
+(defn escape-html [s]
+  (.. s
+    (replace "&" "&amp;")
+    (replace "<" "&lt;")
+    (replace "\"" "&quot;")))
 
 (defn render-results [results ^js el]
+  (set! (.-innerHTML el) "")
   (if (empty? results)
-    (set! (.-innerHTML el) "<li role=\"option\">Sin resultados</li>")
-    (set! (.-innerHTML el)
-      (apply str
-        (map
-          (fn [ep]
-            (str "<li role=\"option\">"
-              "<a href=\"/episodios/" (.-slug ep) "/\">"
-              (.-title ep)
-              "</a>"
-              " <small>" (.-date ep) "</small>"
-              "</li>"))
-          results)))))
+    (let [li (.createElement js/document "li")]
+      (set! (.-textContent li) "Sin resultados")
+      (set! (.-role li) "option")
+      (.appendChild el li))
+    (doseq [ep results]
+      (let [li (.createElement js/document "li")
+            a (.createElement js/document "a")
+            small (.createElement js/document "small")]
+        (set! (.-role li) "option")
+        (set! (.-href a) (str "/episodios/" (.-slug ep) "/"))
+        (set! (.-textContent a) (escape-html (.-title ep)))
+        (set! (.-textContent small) (.-date ep))
+        (.appendChild li a)
+        (.appendChild li small)
+        (.appendChild el li)))))
 
 (defn init [^js index]
   (let [input (.querySelector js/document "#search-input")
