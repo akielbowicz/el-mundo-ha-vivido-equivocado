@@ -5,20 +5,21 @@ El sitio necesita episodios definidos como archivos Markdown con frontmatter par
 
 ## What Changes
 - Pipeline que compila archivos `.md` con frontmatter → HTML estático en `dist/episodios/`
-- Frontmatter con: título, fecha, slug, audio URL, video URL (opcional), descripción, autores
+- Frontmatter con: título, fecha, slug (auto), audio URL, video URL (opcional), descripción, autores, tags
 - Template HTML para episodios con layout responsive, reproductor de audio, embeds de YouTube
 - Página de índice de episodios generada automáticamente
-- Buscador client-side que filtra episodios por título, autor, descripción
-- Validación de frontmatter en build
+- Buscador client-side (vanilla JS) con fallback a índice sin JS
+- Validación de frontmatter, duplicados de slug, y formato de URLs en build
 
 ## Impact
 - Affected specs: `episode-pages` (new capability)
-- Affected code: `src/`, `scripts/`, `justfile`, `resources/`, `squint.edn`
+- Affected code: `episodios/`, `scripts/`, `src/`, `justfile`, `resources/`
 
 ## Beads
 - el-mundo-ha-vivido-equivocado-1td — Build markdown-to-HTML pipeline
-- el-mundo-ha-vivido-equivocado-tlc — Episode page template with frontmatter
+- el-mundo-ha-vivido-equivocado-tlc — Episode page template with frontmatter support
 - el-mundo-ha-vivido-equivocado-asn — Responsive episode layout
-- el-mundo-ha-vivido-equivocado-tbe — Site-wide search
-- el-mundo-ha-vivido-equivocado-3x0 — Reader mode compatibility
-- el-mundo-ha-vivido-equivocado-afm — Episode index page
+- el-mundo-ha-vivido-equivocado-3x0 — Reader mode compatibility for episode pages
+- el-mundo-ha-vivido-equivocado-afm — Episode index page from markdown sources
+- el-mundo-ha-vivido-equivocado-tbe — Site-wide search functionality
+- el-mundo-ha-vivido-equivocado-8np — Frontmatter validation in build step

@@ -20,12 +20,23 @@ Each episode `.md` file SHALL contain frontmatter with these fields.
 #### Scenario: Required fields
 - **GIVEN** an episode `.md` file
 - **WHEN** parsed by the build pipeline
-- **THEN** the frontmatter MUST include: `title`, `date`, `slug`, `description`, `authors`
+- **THEN** the frontmatter MUST include: `title`, `date` (ISO 8601), `description`, `authors`
 
 #### Scenario: Optional fields
 - **GIVEN** an episode `.md` file
 - **WHEN** parsed by the build pipeline
-- **THEN** the frontmatter MAY include: `audio` (URL), `youtube` (URL or ID), `image` (URL), `tags` (list)
+- **THEN** the frontmatter MAY include: `slug` (auto-generated from title if absent), `audio` (URL), `youtube` (URL or ID), `image` (URL), `image_alt` (string), `tags` (list)
+
+#### Scenario: Slug auto-generation
+- **GIVEN** an episode `.md` file without a `slug` in frontmatter
+- **WHEN** the build runs
+- **THEN** the slug is auto-generated from `title`: lowercase, spaces to hyphens, remove accents
+- **AND** duplicate slug detection fails the build with conflicting file paths
+
+#### Scenario: Duplicate slug detection
+- **GIVEN** two or more episode `.md` files that produce the same slug
+- **WHEN** the build runs
+- **THEN** the build fails with an error listing the conflicting files
 
 ### Requirement: Episode page rendering
 Episode pages SHALL be fully responsive, readable without JavaScript, and pass a11y validation.
@@ -70,14 +81,24 @@ Episode pages SHALL embed YouTube videos with a11y-friendly markup.
 - **AND** the iframe has `title` attribute
 - **AND** a direct link to the video is provided as fallback
 
+#### Scenario: Invalid YouTube URL
+- **GIVEN** an episode with a malformed `youtube` value in frontmatter
+- **WHEN** the build runs
+- **THEN** the build fails with an error indicating the invalid YouTube URL
+
 ### Requirement: Image support
 Episode pages SHALL support images with alt text.
 
-#### Scenario: Image renders
-- **GIVEN** an episode with `image` in frontmatter
+#### Scenario: Image renders with alt text
+- **GIVEN** an episode with `image` and `image_alt` in frontmatter
 - **WHEN** the page is loaded
-- **THEN** an `<img>` element is rendered with `alt` text from frontmatter
+- **THEN** an `<img>` element is rendered with `alt` set to `image_alt`
 - **AND** the image is responsive (max-width 100%)
+
+#### Scenario: Image without alt
+- **GIVEN** an episode with `image` but no `image_alt` in frontmatter
+- **WHEN** the page is loaded
+- **THEN** the image is rendered with `alt=""` (decorative)
 
 ### Requirement: Episode index
 The system SHALL generate an index page listing all episodes.
@@ -88,7 +109,7 @@ The system SHALL generate an index page listing all episodes.
 - **THEN** `dist/episodios/index.html` lists all episodes sorted by date descending
 
 ### Requirement: Client-side search
-The system SHALL provide a searchable index of episodes.
+The system SHALL provide a searchable index of episodes using vanilla JavaScript.
 
 #### Scenario: Search index generated
 - **GIVEN** episode `.md` files
@@ -96,7 +117,13 @@ The system SHALL provide a searchable index of episodes.
 - **THEN** a `dist/search-index.json` is generated with episode metadata
 
 #### Scenario: Search filters episodes
-- **GIVEN** a user on any page
+- **GIVEN** a user on any page with JavaScript enabled
 - **WHEN** they type in the search field
 - **THEN** matching episodes are shown in real-time
-- **AND** the search matches title, description, and authors
+- **AND** the search matches title, description, and authors using substring matching
+
+#### Scenario: No-JS fallback
+- **GIVEN** a user on any page with JavaScript disabled
+- **WHEN** the page loads
+- **THEN** a `<noscript>` link to `/episodios/` is shown instead of the search UI
+- **AND** no broken elements appear
