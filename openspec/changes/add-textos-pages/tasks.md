@@ -29,6 +29,9 @@
 - [ ] 4.5 **Verify:** generated EPUB opens in Calibre/Kindle preview
 
 ## 5. Print styles
+
+*Note: sections 5 and 6 (analytics on existing pages) can be done independently of the textos pipeline — they improve existing pages immediately.*
+
 - [ ] 5.1 Update `@media print` in `resources/style.css`
 - [ ] 5.2 Hide audio, video, episode-nav in print
 - [ ] 5.3 Add page URL as print footer
