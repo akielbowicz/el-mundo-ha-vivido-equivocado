@@ -1,0 +1,5 @@
+;; contents generated at https://github.com/squint-cljs/squint/issues/230
+{:paths ["src" "resources"]
+ :output-dir "dist"
+ :copy-resources [:css :html]
+ :extension ".mjs"}
