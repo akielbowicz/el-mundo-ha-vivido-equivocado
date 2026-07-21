@@ -1,0 +1,7 @@
+{
+  "database": "dolt",
+  "backend": "dolt",
+  "dolt_mode": "embedded",
+  "dolt_database": "el_mundo_ha_vivido_equivocado",
+  "project_id": "82ed0975-aae2-43cd-a35d-f82447707dcc"
+}
