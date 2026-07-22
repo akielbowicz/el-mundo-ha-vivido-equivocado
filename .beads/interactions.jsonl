@@ -12,3 +12,4 @@
 {"id":"int-85fed54a","kind":"field_change","created_at":"2026-07-22T19:05:39.069517367Z","actor":"akielbowicz","issue_id":"el-mundo-ha-vivido-equivocado-8zu","extra":{"field":"status","new_value":"closed","old_value":"in_progress"}}
 {"id":"int-0553f669","kind":"field_change","created_at":"2026-07-22T19:17:31.225518765Z","actor":"akielbowicz","issue_id":"el-mundo-ha-vivido-equivocado-8qu","extra":{"field":"status","new_value":"closed","old_value":"in_progress"}}
 {"id":"int-20575de4","kind":"field_change","created_at":"2026-07-22T19:28:26.63731341Z","actor":"akielbowicz","issue_id":"el-mundo-ha-vivido-equivocado-8zw","extra":{"field":"status","new_value":"closed","old_value":"in_progress"}}
+{"id":"int-767cba69","kind":"field_change","created_at":"2026-07-22T19:39:16.783004749Z","actor":"akielbowicz","issue_id":"el-mundo-ha-vivido-equivocado-wrn","extra":{"field":"status","new_value":"closed","old_value":"in_progress"}}

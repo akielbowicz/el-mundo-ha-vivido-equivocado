@@ -133,6 +133,17 @@ async function main() {
     }
     slugs.set(slug, file);
 
+    // Validate tags (no spaces — used as space-separated in data-tags attribute)
+    if (fm.tags) {
+      for (const tag of fm.tags) {
+        if (tag.includes(" ")) {
+          throw new Error(
+            `${file}: tag "${tag}" contains spaces — tags must be single-word slugs`,
+          );
+        }
+      }
+    }
+
     // Validate YouTube URL
     let youtubeId = null;
     if (fm.youtube) {

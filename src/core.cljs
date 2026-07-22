@@ -7,6 +7,10 @@
 
 (.info js/console "El mundo ha vivido equivocado — loaded")
 
+;; ── Cached search index ─────────────────────
+
+(def search-index (atom nil))
+
 ;; ── Global Audio Player ────────────────────
 
 (def audio-el (.querySelector js/document "#global-audio"))
@@ -33,7 +37,6 @@
         (set! (.-textContent duration-el) (format-time duration))
         (set! (.-value (.-max range-el)) duration)
         (set! (.-value range-el) current))
-      ;; Update play button icon
       (set! (.-textContent play-btn)
         (if (.-paused audio-el) "▶" "⏸")))))
 
@@ -56,27 +59,21 @@
 
 (defn init-player []
   (when (and audio-el play-btn close-btn range-el)
-    ;; Play/pause
     (.addEventListener play-btn "click" (fn [_] (toggle-play)))
-    ;; Close
     (.addEventListener close-btn "click"
       (fn [_]
         (.pause audio-el)
         (set! (.-src audio-el) "")
         (set! (.-hidden player-el) true)))
-    ;; Progress bar seek
     (.addEventListener range-el "input"
       (fn [e]
         (when (.-duration audio-el)
           (set! (.-currentTime audio-el) (js/parseFloat (.. e -target -value))))))
-    ;; Time update
     (.addEventListener audio-el "timeupdate" (fn [_] (update-player-ui)))
-    ;; Audio ended
     (.addEventListener audio-el "ended"
       (fn [_]
         (set! (.-textContent play-btn) "▶")
         (set! (.-value range-el) 0)))
-    ;; Loaded metadata
     (.addEventListener audio-el "loadedmetadata" (fn [_] (update-player-ui)))))
 
 ;; ── Play button delegation ─────────────────
@@ -96,9 +93,24 @@
 
 (defn is-internal-link [^js a]
   (and (.-origin a) (= (.-origin a) (.-origin js/location))
-       (not (.includes (.-pathname a) "/contacto/"))
        (not (.-download a))
        (not= (.-protocol a) "mailto:")))
+
+(defn init-search-on-content []
+  (let [cached @search-index]
+    (when cached
+      (let [input (.querySelector js/document "#search-input")]
+        (when input
+          (try
+            (-> (import "./search.mjs")
+                (.then (fn [mod] (.init mod cached))))
+            (catch js/Error e
+              (.warn js/console "Search re-init failed:" e))))))
+    (try
+      (-> (import "./search.mjs")
+          (.then (fn [mod] (.init-filters mod))))
+      (catch js/Error e
+        (.warn js/console "Filter chips re-init failed:" e)))))
 
 (defn swap-content [html]
   (let [parser (js/DOMParser.)
@@ -107,27 +119,18 @@
         new-title (.-textContent (.querySelector doc "title"))
         current-main (.querySelector js/document "#main-content")]
     (when (and new-main current-main)
-      ;; Swap only the <main> element — keep header, footer, global player intact
       (set! (.-outerHTML current-main) (.-outerHTML new-main))
-      ;; Update title
       (set! (.-title js/document) new-title)
-      ;; Re-init search on the new content
-      (let [input (.querySelector js/document "#search-input")]
-        (when input
-          (try
-            (-> (js/fetch "/search-index.json")
-                (.then (fn [res] (.json res)))
-                (.then (fn [index]
-                         (-> (import "./search.mjs")
-                             (.then (fn [mod] (.init mod index)))))))
-            (catch js/Error e
-              (.warn js/console "Search re-init failed:" e)))))
-      ;; Re-init filter chips
-      (try
-        (-> (import "./search.mjs")
-            (.then (fn [mod] (.init-filters mod))))
-        (catch js/Error e
-          (.warn js/console "Filter chips re-init failed:" e))))))
+      (init-search-on-content))))
+
+(defn navigate-to [href]
+  (.pushState js/window.history #js {} "" href)
+  (-> (js/fetch href)
+      (.then (fn [res] (.text res)))
+      (.then (fn [html] (swap-content html)))
+      (.catch (fn [err]
+                (.warn js/console "Navigation failed:" err)
+                (set! (.-location js/window) href)))))
 
 (defn init-nav []
   (.addEventListener js/document "click"
@@ -135,35 +138,25 @@
       (let [a (.. e -target (closest "a[href]"))]
         (when (and a (is-internal-link a) (not (.. e -metaKey)) (not (.. e -ctrlKey)))
           (.preventDefault e)
-          (let [href (.-href a)]
-            ;; Update URL
-            (.pushState js/window.history #js {} "" href)
-            ;; Fetch and swap
-            (-> (js/fetch href)
-                (.then (fn [res] (.text res)))
-                (.then (fn [html] (swap-content html)))
-                (.catch (fn [err]
-                          (.warn js/console "Navigation failed:" err)
-                          (set! (.-location js/window) href))))))))))
+          (navigate-to (.-href a)))))))
 
 ;; ── Init ─────────────────────────────────────
+
+(defn load-search-index []
+  (-> (js/fetch "/search-index.json")
+      (.then (fn [res] (.json res)))
+      (.then (fn [index]
+               (reset! search-index index)
+               (-> (import "./search.mjs")
+                   (.then (fn [mod] (.init mod index))))))
+      (.catch (fn [e] (.warn js/console "Search failed to load:" e)))))
 
 (defn init []
   (init-player)
   (init-play-buttons)
   (init-nav)
-  ;; Search init
-  (let [input (.querySelector js/document "#search-input")]
-    (when input
-      (try
-        (-> (js/fetch "/search-index.json")
-            (.then (fn [res] (.json res)))
-            (.then (fn [index]
-                     (-> (import "./search.mjs")
-                         (.then (fn [mod] (.init mod index)))))))
-        (catch js/Error e
-          (.warn js/console "Search failed to load:" e)))))
-  ;; Filter chips init
+  (load-search-index)
+  ;; Filter chips init (needs search.mjs loaded)
   (try
     (-> (import "./search.mjs")
         (.then (fn [mod] (.init-filters mod))))
@@ -172,9 +165,12 @@
 
 ;; Handle browser back/forward
 (.addEventListener js/window "popstate"
-  (fn [e]
+  (fn [_]
     (-> (js/fetch (.-location js/window))
         (.then (fn [res] (.text res)))
-        (.then (fn [html] (swap-content html))))))
+        (.then (fn [html] (swap-content html)))
+        (.catch (fn [err]
+                  (.warn js/console "Popstate navigation failed:" err)
+                  (.reload (.-location js/window)))))))
 
 (init)
