@@ -1,26 +1,32 @@
 * Programas
 
-| #  | Fecha       |
-|----+-------------|
-|  1 | 2026-08-06  |
-|  2 | 2026-08-13  |
-|  3 | 2026-08-20  |
-|  4 | 2026-08-27  |
-|  5 | 2026-09-03  |
-|  6 | 2026-09-10  |
-|  7 | 2026-09-17  |
-|  8 | 2026-09-24  |
-|  9 | 2026-10-01  |
-| 10 | 2026-10-08  |
-| 11 | 2026-10-15  |
-| 12 | 2026-10-22  |
-| 13 | 2026-10-29  |
-| 14 | 2026-11-05  |
-| 15 | 2026-11-12  |
-| 16 | 2026-11-19  |
-| 17 | 2026-11-26  |
-| 18 | 2026-12-03  |
-| 19 | 2026-12-10  |
-| 20 | 2026-12-17  |
-| 21 | 2026-12-24  |
-| 22 | 2026-12-31  |
+Cronograma tentativo de la primera temporada. Las fechas y los cuentos pueden ajustarse según el ritmo de las grabaciones.
+
+** Calendario
+
+| #  | Fecha       | Cuento               |
+|----+-------------+----------------------|
+|  1 | 2026-08-06  | El Aleph             |
+|  2 | 2026-08-13  | La noche boca arriba |
+|  3 | 2026-08-20  | El Sur               |
+|  4 | 2026-08-27  | Casa tomada          |
+|  5 | 2026-09-03  | Axolotl              |
+|  6 | 2026-09-10  | El impostor Tom Castro |
+|  7 | 2026-09-17  | Continuidad de los parques |
+|  8 | 2026-09-24  | (por anunciar)       |
+|  9 | 2026-10-01  | (por anunciar)       |
+| 10 | 2026-10-08  | (por anunciar)       |
+| 11 | 2026-10-15  | (por anunciar)       |
+| 12 | 2026-10-22  | (por anunciar)       |
+| 13 | 2026-10-29  | (por anunciar)       |
+| 14 | 2026-11-05  | (por anunciar)       |
+| 15 | 2026-11-12  | (por anunciar)       |
+| 16 | 2026-11-19  | (por anunciar)       |
+| 17 | 2026-11-26  | (por anunciar)       |
+| 18 | 2026-12-03  | (por anunciar)       |
+| 19 | 2026-12-10  | (por anunciar)       |
+| 20 | 2026-12-17  | (por anunciar)       |
+| 21 | 2026-12-24  | (por anunciar)       |
+| 22 | 2026-12-31  | (por anunciar)       |
+
+Los episodios se publican los jueves.

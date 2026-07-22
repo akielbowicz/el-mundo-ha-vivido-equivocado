@@ -185,7 +185,8 @@ function renderBlocks(blocks) {
   for (const block of blocks) {
     switch (block.type) {
       case "heading": {
-        const level = Math.min(block.level, 6);
+        // Shift headings down (h1→h2) because template already has an h1
+        const level = Math.min(block.level + 1, 6);
         html += `<h${level}>${escapeHtml(block.text)}</h${level}>\n`;
         break;
       }

@@ -12,7 +12,7 @@ import { readdir } from "node:fs/promises";
 import { join, dirname, basename } from "node:path";
 import { orgToHtml } from "./org-to-html.mjs";
 
-const SRC_DIRS = ["materiales", "programa"];
+const SRC_DIRS = ["materiales", "programa", "paginas"];
 const DIST_DIR = "dist";
 const TEMPLATE = readFileSync("scripts/org-template.html", "utf-8");
 const GLOBAL_PLAYER = readFileSync("scripts/global-player.html", "utf-8");

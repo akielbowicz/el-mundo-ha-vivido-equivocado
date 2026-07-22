@@ -1,1 +1,26 @@
 * Cuentos
+
+Esta es una lista de referencia de los cuentos que leemos y comentamos en el programa. No es un índice exhaustivo, sino una bitácora en construcción.
+
+** Leídos
+
+- *El Aleph* — Jorge Luis Borges (Episodio 1)
+- *La noche boca arriba* — Julio Cortázar (Episodio 2)
+
+** Por leer
+
+- *El Sur* — Jorge Luis Borges
+- *Casa tomada* — Julio Cortázar
+- *El impostor inverosímil Tom Castro* — Jorge Luis Borges
+- *Axolotl* — Julio Cortázar
+- *Las ruinas circulares* — Jorge Luis Borges
+- *Continuidad de los parques* — Julio Cortázar
+
+** Criterios de selección
+
+Buscamos cuentos que:
+
+- Se puedan leer en voz alta en una sesión de radio (~20-30 min)
+- Tengan una densidad narrativa que invite a la conversación
+- Abran preguntas más que cerrarlas
+- Funcionen tanto en la primera lectura como en la relectura

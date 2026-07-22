@@ -510,6 +510,68 @@ footer {
   text-align: center;
 }
 
+/* ── Org page content ──────────────────── */
+
+.page-content {
+  max-width: 70ch;
+}
+
+.page-content h2 {
+  margin-top: 2rem;
+}
+
+.page-content h3 {
+  margin-top: 1.5rem;
+}
+
+.page-content table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--font-ui);
+  font-size: 0.9rem;
+  margin: 1rem 0;
+}
+
+.page-content th,
+.page-content td {
+  padding: 0.4rem 0.75rem;
+  border: 1px solid var(--color-border);
+  text-align: left;
+}
+
+.page-content th {
+  background: rgba(139, 58, 58, 0.05);
+  font-weight: 600;
+}
+
+.page-content blockquote {
+  margin: 1rem 0;
+  padding: 0.5rem 1rem;
+  border-left: 3px solid var(--color-accent);
+  background: rgba(139, 58, 58, 0.05);
+  font-style: italic;
+}
+
+.page-content ul,
+.page-content ol {
+  margin: 1rem 0;
+  padding-left: 1.5rem;
+}
+
+.page-content li {
+  margin-bottom: 0.25rem;
+}
+
+.page-content pre {
+  font-family: var(--font-ui);
+  font-size: 0.85rem;
+  background: rgba(0,0,0,0.04);
+  padding: 0.75rem 1rem;
+  border-radius: 4px;
+  overflow-x: auto;
+  margin: 1rem 0;
+}
+
 /* ── Episode pages ─────────────────────── */
 
 .breadcrumb {
