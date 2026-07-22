@@ -243,11 +243,47 @@ async function main() {
   console.log("  ✓ search-index.json");
 }
 
+/* ── Helpers ─────────────────────────────── */
+
+function formatTag(tag) {
+  // Convert slug to display: "realismo-magico" → "Realismo mágico"
+  return tag
+    .replace(/-/g, " ")
+    .replace(/\b\w/g, c => c.toUpperCase())
+    .replace(/^(.)/, (_, c) => c.toUpperCase());
+}
+
+function collectTags(episodes) {
+  const all = new Set();
+  for (const ep of episodes) {
+    for (const tag of ep.tags) {
+      all.add(tag);
+    }
+  }
+  return [...all].sort();
+}
+
+function generateChips(tags) {
+  if (tags.length === 0) return "";
+  const buttons = tags.map(t =>
+    `<button type="button" class="chip" data-tag="${t}" aria-pressed="false">#${formatTag(t)}</button>`
+  ).join("\n          ");
+  return `
+      <div class="filter-chips" role="group" aria-label="Filtrar por etiqueta">
+        <button type="button" class="chip chip-active" data-tag="all" aria-pressed="true">Todos</button>
+          ${buttons}
+      </div>`;
+}
+
 /* ── Index page generator ──────────────── */
 
 function generateIndex(episodes) {
-  const items = episodes.map(ep => `
-    <li>
+  const tags = collectTags(episodes);
+  const chips = generateChips(tags);
+  const items = episodes.map(ep => {
+    const tagStr = ep.tags.length > 0 ? ` data-tags="${ep.tags.join(" ")}"` : "";
+    return `
+    <li${tagStr}>
       <article>
         <h3><a href="/episodios/${ep.slug}/">${ep.title}</a></h3>
         <p class="episode-meta">
@@ -262,7 +298,8 @@ function generateIndex(episodes) {
           ${ep.youtube ? '<span class="badge badge-video">📺 Video</span>' : ""}
         </div>
       </article>
-    </li>`).join("\n");
+    </li>`;
+  }).join("\n");
 
   return `<!DOCTYPE html>
 <html lang="es">
@@ -298,7 +335,8 @@ function generateIndex(episodes) {
   <main id="main-content">
     <div class="container">
       <h2>Episodios</h2>
-      <ul class="episode-list">${items}
+      ${chips}
+      <ul class="episode-list" data-filter-container>${items}
       </ul>
     </div>
   </main>

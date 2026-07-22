@@ -22,3 +22,11 @@
                        (.then (fn [mod] (.init mod index)))))))
       (catch js/Error e
         (.warn js/console "Search failed to load:" e)))))
+
+;; ── Filter chips initialization ──────────
+
+(try
+  (-> (import "./search.mjs")
+      (.then (fn [mod] (.init-filters mod))))
+  (catch js/Error e
+    (.warn js/console "Filter chips failed to load:" e)))
