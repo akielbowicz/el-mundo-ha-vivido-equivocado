@@ -112,6 +112,20 @@ async function main() {
   }
 
   console.log(`  ✓ ${allFiles.length} página(s) generada(s)`);
+
+  /* ── Redirects for paginas/* to top-level paths ── */
+
+  const topRedirects = [
+    { from: "sobre", to: "/paginas/sobre/" },
+    { from: "contacto", to: "/paginas/contacto/" },
+  ];
+  for (const { from, to } of topRedirects) {
+    const redirectDir = join(DIST_DIR, from);
+    mkdirSync(redirectDir, { recursive: true });
+    const html = `<!DOCTYPE html>\n<html lang="es">\n<head>\n<meta charset="UTF-8">\n<meta name="viewport" content="width=device-width, initial-scale=1.0">\n<meta http-equiv="refresh" content="0; url=${to}">\n<title>Redirigiendo</title>\n<link rel="canonical" href="${to}">\n</head>\n<body>\n<p>Redirigiendo a <a href="${to}">${from}</a>…</p>\n</body>\n</html>`;
+    writeFileSync(join(redirectDir, "index.html"), html);
+    console.log(`  ✓ ${from}/index.html → ${to}`);
+  }
 }
 
 main().catch(err => {

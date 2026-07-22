@@ -1029,6 +1029,44 @@ footer {
   a { text-decoration: underline; }
 }
 
+/* ── Error pages ───────────────────────── */
+
+.error-page {
+  text-align: center;
+  padding: 3rem 0;
+}
+
+.error-page h2 {
+  font-size: 2rem;
+  margin-bottom: 1rem;
+}
+
+.error-page hr {
+  border: none;
+  border-top: 1px solid var(--color-border);
+  margin: 2rem auto;
+  max-width: 8rem;
+}
+
+.error-link {
+  display: inline-block;
+  font-family: var(--font-ui);
+  font-size: 1rem;
+  margin-top: 0.5rem;
+}
+
+.error-suggestion {
+  font-family: var(--font-ui);
+  font-size: 0.9rem;
+  color: var(--color-muted);
+}
+
+.error-page .episode-list {
+  max-width: 24rem;
+  margin: 0 auto;
+  text-align: left;
+}
+
 @media (max-width: 600px) {
   .global-progress {
     flex: 1;
