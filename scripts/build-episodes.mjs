@@ -238,6 +238,32 @@ async function main() {
   writeFileSync(join(DIST_DIR, "episodios", "index.html"), indexHtml);
   console.log(`  ✓ episodios/index.html — ${episodeData.length} episodios`);
 
+  /* ── Numeric redirects ── */
+
+  // Assign numbers chronologically (oldest = 1)
+  const byDate = [...episodeData].sort((a, b) => new Date(a.date) - new Date(b.date));
+  for (let i = 0; i < byDate.length; i++) {
+    const ep = byDate[i];
+    const num = i + 1;
+    const redirectDir = join(DIST_DIR, "episodios", String(num));
+    mkdirSync(redirectDir, { recursive: true });
+    const redirectHtml = `<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="refresh" content="0; url=/episodios/${ep.slug}/">
+<title>Episodio ${num} — Redirigiendo</title>
+<link rel="canonical" href="/episodios/${ep.slug}/">
+</head>
+<body>
+<p>Redirigiendo a <a href="/episodios/${ep.slug}/">${ep.title}</a>…</p>
+</body>
+</html>`;
+    writeFileSync(join(redirectDir, "index.html"), redirectHtml);
+    console.log(`  ✓ episodios/${num}/index.html → ${ep.slug}`);
+  }
+
   /* ── Search index ── */
 
   const searchIndex = episodeData.map(ep => ({

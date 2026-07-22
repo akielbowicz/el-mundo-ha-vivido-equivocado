@@ -168,7 +168,16 @@
   (.pushState js/window.history #js {} "" href)
   (-> (js/fetch href)
       (.then (fn [res] (.text res)))
-      (.then (fn [html] (swap-content html)))
+      (.then (fn [html]
+               ;; Follow canonical redirect if present
+               (let [parser (js/DOMParser.)
+                     doc (.parseFromString parser html "text/html")
+                     canonical (.querySelector doc "link[rel=canonical]")]
+                 (if (and canonical (.-href canonical))
+                   ;; Canonical redirect — follow it
+                   (navigate-to (.-href canonical))
+                   ;; Normal page — swap content
+                   (swap-content html)))))
       (.catch (fn [err]
                 (.warn js/console "Navigation failed:" err)
                 (set! (.-location js/window) href)))))
@@ -209,7 +218,17 @@
   (fn [_]
     (-> (js/fetch (.-location js/window))
         (.then (fn [res] (.text res)))
-        (.then (fn [html] (swap-content html)))
+        (.then (fn [html]
+                 (let [parser (js/DOMParser.)
+                       doc (.parseFromString parser html "text/html")
+                       canonical (.querySelector doc "link[rel=canonical]")]
+                   (if (and canonical (.-href canonical))
+                     ;; Follow canonical — update URL and fetch again
+                     (.replaceState js/window.history #js {} "" (.-href canonical))
+                     (-> (js/fetch (.-href canonical))
+                         (.then (fn [r] (.text r)))
+                         (.then (fn [h] (swap-content h))))
+                     (swap-content html)))))
         (.catch (fn [err]
                   (.warn js/console "Popstate navigation failed:" err)
                   (.reload (.-location js/window)))))))
