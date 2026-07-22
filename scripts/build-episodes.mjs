@@ -166,6 +166,8 @@ async function main() {
       date_iso: fm.date,
       date_display: formatDate(fm.date),
       authors,
+      duration: fm.duration || "",
+      genre: fm.genre || "",
       audio: fm.audio || "",
       youtube: fm.youtube ? true : false,
       youtube_id: youtubeId || "",
@@ -186,6 +188,8 @@ async function main() {
       date: fm.date,
       description: fm.description,
       authors,
+      duration: fm.duration || "",
+      genre: fm.genre || "",
       audio: !!fm.audio,
       youtube: !!fm.youtube,
       image: !!fm.image,
@@ -231,6 +235,8 @@ async function main() {
     date: ep.date,
     description: ep.description,
     authors: ep.authors,
+    duration: ep.duration,
+    genre: ep.genre,
     tags: ep.tags,
   }));
   writeFileSync(join(DIST_DIR, "search-index.json"), JSON.stringify(searchIndex));
@@ -249,8 +255,12 @@ function generateIndex(episodes) {
           ${ep.authors ? ` · por ${ep.authors}` : ""}
         </p>
         <p>${ep.description}</p>
-        ${ep.audio ? '<span class="tag">🎧 Audio</span>' : ""}
-        ${ep.youtube ? '<span class="tag">📺 Video</span>' : ""}
+        <div class="episode-badges">
+          ${ep.duration ? `<span class="badge badge-duration">⏱️ ${ep.duration}</span>` : ""}
+          ${ep.genre ? `<span class="badge badge-genre">🎙️ ${ep.genre}</span>` : ""}
+          ${ep.audio ? '<span class="badge badge-audio">🎧 Audio</span>' : ""}
+          ${ep.youtube ? '<span class="badge badge-video">📺 Video</span>' : ""}
+        </div>
       </article>
     </li>`).join("\n");
 

@@ -39,6 +39,12 @@
 {{#authors}} · por {{authors}}{{/authors}}
 </p>
 </header>
+{{#duration}}
+<div class="episode-badges">
+  <span class="badge badge-duration">⏱️ {{duration}}</span>
+  {{#genre}}<span class="badge badge-genre">🎙️ {{genre}}</span>{{/genre}}
+</div>
+{{/duration}}
 {{#audio}}
 <section class="episode-audio" aria-label="Reproductor de audio">
 <audio controls preload="metadata" src="{{audio}}">

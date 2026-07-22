@@ -5,6 +5,8 @@ status: published
 description: "Leemos La noche boca arriba de Julio Cortázar y exploramos el umbral entre el sueño y la vigilia."
 authors:
   - "Sasha"
+duration: "22:00"
+genre: "Cuento comentado"
 audio: "https://example.com/audio/la-noche-boca-arriba.mp3"
 tags:
   - cortazar

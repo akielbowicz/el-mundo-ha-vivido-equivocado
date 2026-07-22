@@ -5,6 +5,8 @@ status: published
 description: "Leemos y comentamos El Aleph de Jorge Luis Borges. ¿Qué significa encontrar el punto que contiene todos los puntos?"
 authors:
   - "Sasha"
+duration: "24:00"
+genre: "Cuento comentado"
 audio: "https://example.com/audio/el-aleph.mp3"
 youtube: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
 image: "https://picsum.photos/800/400"
