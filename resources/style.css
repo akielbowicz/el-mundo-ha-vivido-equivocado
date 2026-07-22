@@ -213,6 +213,53 @@ a:focus-visible {
   border-color: var(--color-accent-hover);
 }
 
+/* ── Filter Empty State ───────────────── */
+
+.filter-empty {
+  text-align: center;
+  padding: 2rem 1rem;
+  font-family: var(--font-ui);
+  color: var(--color-muted);
+}
+
+.filter-empty p {
+  margin-bottom: 0.75rem;
+  font-size: 0.95rem;
+}
+
+.filter-empty .chip {
+  font-size: 0.85rem;
+}
+
+/* ── Search Empty State ───────────────── */
+
+.search-empty-msg {
+  font-family: var(--font-ui);
+  font-size: 0.85rem;
+  color: var(--color-muted);
+  padding: 0.5rem 0.75rem;
+  margin: 0;
+}
+
+.search-suggestions {
+  list-style: none;
+  padding: 0;
+}
+
+.search-suggestions li {
+  padding: 0.25rem 0.75rem;
+}
+
+.search-suggestions a {
+  font-family: var(--font-ui);
+  font-size: 0.9rem;
+  text-decoration: none;
+}
+
+.search-suggestions a:hover {
+  text-decoration: underline;
+}
+
 /* ── Platform Distribution Links ───────── */
 
 .platform-section {

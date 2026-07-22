@@ -338,6 +338,10 @@ function generateIndex(episodes) {
       ${chips}
       <ul class="episode-list" data-filter-container>${items}
       </ul>
+      <div class="filter-empty" data-filter-empty style="display:none">
+        <p>No hay episodios con estos filtros.</p>
+        <button type="button" class="chip" id="clear-filters">Limpiar filtros</button>
+      </div>
     </div>
   </main>
   <footer>
