@@ -169,6 +169,48 @@ a:focus-visible {
   color: var(--color-accent-hover);
 }
 
+/* ── Platform Distribution Links ───────── */
+
+.platform-section {
+  margin-bottom: 2rem;
+}
+
+.platform-label {
+  font-family: var(--font-ui);
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-muted);
+  margin-bottom: 0.5rem;
+}
+
+.platform-list {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.platform-link {
+  display: inline-block;
+  font-family: var(--font-ui);
+  font-size: 0.875rem;
+  padding: 0.35rem 0.85rem;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  text-decoration: none;
+  color: var(--color-text);
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.platform-link:hover,
+.platform-link:focus-visible {
+  background: var(--color-accent);
+  color: #fff;
+  border-color: var(--color-accent);
+  text-decoration: none;
+}
+
 /* ── Hero Episode Card ─────────────────── */
 
 .hero-episode {
