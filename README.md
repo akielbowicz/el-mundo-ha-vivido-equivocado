@@ -1,6 +1,6 @@
 # el-mundo-ha-vivido-equivocado
 
-**https://equivocados.ar**
+**https://equivocadxs.ar** (antes equivocados.ar → redirect)
 
 Built with [Squint](https://github.com/squint-cljs/squint) — Clojure syntax compiling to vanilla JS.
 

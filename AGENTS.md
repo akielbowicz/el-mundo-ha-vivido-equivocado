@@ -19,7 +19,7 @@ Keep this managed block so 'openspec update' can refresh the instructions.
 
 # el-mundo-ha-vivido-equivocado — Agent Context
 
-**Sitio:** https://equivocados.ar
+**Sitio:** https://equivocadxs.ar (equivocados.ar → redirect 301)
 **Repo:** https://github.com/akielbowicz/el-mundo-ha-vivido-equivocado
 
 ## Stack
@@ -41,7 +41,7 @@ Keep this managed block so 'openspec update' can refresh the instructions.
 ├── resources/
 │   ├── index.html         # HTML semántico completo (lector modo-ready)
 │   ├── style.css          # estilos a11y, responsive, prefers-reduced-motion
-│   └── CNAME              # dominio (equivocados.ar)
+│   └── CNAME              # dominio principal (equivocadxs.ar)
 ├── scripts/
 │   ├── check-reader-mode.mjs  # valida compatibilidad con Firefox Reader Mode
 │   └── a11y-audit.mjs         # html-validate con reglas a11y sobre el built
@@ -82,8 +82,9 @@ Keep this managed block so 'openspec update' can refresh the instructions.
 
 ## Domain
 
-- `equivocados.ar` delegado desde nic.ar a Cloudflare
-- Cloudflare: registros CNAME (proxy naranja), SSL/TLS en **Full**
+- `equivocadxs.ar` delegado desde nic.ar a Cloudflare (dominio principal)
+- `equivocados.ar` delegado desde nic.ar a Cloudflare → redirect 301 permanente a `equivocadxs.ar`
+- Cloudflare: registros A/AAAA (proxy naranja), SSL/TLS en **Full**
 - `CNAME` en `resources/` se copia a `dist/` en cada build
 
 ## Squint config
