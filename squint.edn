@@ -1,6 +1,6 @@
 ;; source paths for .cljs files; copy-resources matches by extension
 {:paths ["src" "resources"]
  :output-dir "dist"
- :copy-resources [:css :html]
+ :copy-resources [:css :html :svg]
  :extension ".mjs"
  :elide-imports true}

@@ -9,8 +9,8 @@ duration: "24:00"
 genre: "Cuento comentado"
 audio: "https://example.com/audio/el-aleph.mp3"
 youtube: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
-image: "https://picsum.photos/800/400"
-image_alt: "Ilustración abstracta del Aleph"
+image: "/images/el-aleph.svg"
+image_alt: "Portada del episodio El Aleph"
 tags:
   - borges
   - realismo-magico

@@ -192,7 +192,7 @@ async function main() {
       genre: fm.genre || "",
       audio: !!fm.audio,
       youtube: !!fm.youtube,
-      image: !!fm.image,
+      image: fm.image || "",
       tags: fm.tags || [],
       bodyHtml,
       ctx,
@@ -284,7 +284,9 @@ function generateIndex(episodes) {
     const tagStr = ep.tags.length > 0 ? ` data-tags="${ep.tags.join(" ")}"` : "";
     return `
     <li${tagStr}>
-      <article>
+      <article class="episode-card">
+        ${ep.image ? `<a href="/episodios/${ep.slug}/" class="episode-thumb-link" aria-hidden="true" tabindex="-1"><img src="${ep.image}" alt="" class="episode-thumb" loading="lazy" width="80" height="80"></a>` : ""}
+        <div class="episode-card-body">
         <h3><a href="/episodios/${ep.slug}/">${ep.title}</a></h3>
         <p class="episode-meta">
           <time datetime="${ep.date}">${formatDate(ep.date)}</time>
@@ -296,6 +298,7 @@ function generateIndex(episodes) {
           ${ep.genre ? `<span class="badge badge-genre">🎙️ ${ep.genre}</span>` : ""}
           ${ep.audio ? '<span class="badge badge-audio">🎧 Audio</span>' : ""}
           ${ep.youtube ? '<span class="badge badge-video">📺 Video</span>' : ""}
+        </div>
         </div>
       </article>
     </li>`;
