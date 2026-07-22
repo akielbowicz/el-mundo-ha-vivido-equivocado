@@ -15,14 +15,17 @@ import { orgToHtml } from "./org-to-html.mjs";
 const SRC_DIRS = ["materiales", "programa"];
 const DIST_DIR = "dist";
 const TEMPLATE = readFileSync("scripts/org-template.html", "utf-8");
+const GLOBAL_PLAYER = readFileSync("scripts/global-player.html", "utf-8");
 
 /* ── Helpers ───────────────────────────── */
 
 function renderTemplate(template, vars) {
-  return template.replace(/\{\{(\w+)}}/g, (_, key) => {
-    const val = vars[key];
-    return val !== undefined && val !== null ? String(val) : "";
-  });
+  return template
+    .replace(/\{\{(\w+)}}/g, (_, key) => {
+      const val = vars[key];
+      return val !== undefined && val !== null ? String(val) : "";
+    })
+    .replace("{{GLOBAL_PLAYER}}", GLOBAL_PLAYER);
 }
 
 function titleFromOrg(raw) {

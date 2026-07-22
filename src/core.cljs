@@ -40,6 +40,15 @@
       (set! (.-textContent play-btn)
         (if (.-paused audio-el) "▶" "⏸")))))
 
+(defn- save-audio-state []
+  (try
+    (let [saved (.. js/sessionStorage -getItem "equivocadxs-audio")]
+      (let [data (if saved (js/JSON.parse saved) #js{})]
+        (set! (.-currentTime data) (.-currentTime audio-el))
+        (set! (.-paused data) (.-paused audio-el))
+        (.. js/sessionStorage -setItem "equivocadxs-audio" (js/JSON.stringify data))))
+    (catch js/Error _ nil)))
+
 (defn load-audio [src title author]
   (when (and audio-el player-el)
     (set! (.-src audio-el) src)
@@ -49,6 +58,11 @@
     (set! (.-textContent duration-el) "0:00")
     (set! (.-value range-el) 0)
     (set! (.-hidden player-el) false)
+    ;; Save to sessionStorage for persistence across full page loads
+    (try
+      (.. js/sessionStorage -setItem "equivocadxs-audio"
+        (js/JSON.stringify #js {:src src :title title :author author :currentTime 0 :paused true}))
+      (catch js/Error _ nil))
     (.play audio-el)))
 
 (defn toggle-play []
@@ -59,6 +73,23 @@
 
 (defn init-player []
   (when (and audio-el play-btn close-btn range-el)
+    ;; Restore audio state from sessionStorage (after full page reload)
+    (try
+      (let [saved (.. js/sessionStorage -getItem "equivocadxs-audio")]
+        (when saved
+          (let [data (js/JSON.parse saved)]
+            (when (and (.-src data) (.-title data))
+              (load-audio (.-src data) (.-title data) (or (.-author data) ""))
+              ;; Restore playback position after load-audio starts playing
+              (when (.-currentTime data)
+                (.addEventListener audio-el "loadedmetadata"
+                  (fn [_]
+                    (set! (.-currentTime audio-el) (.-currentTime data)))))
+              ;; If was paused, pause after loading
+              (when (.-paused data)
+                (.addEventListener audio-el "canplay"
+                  (fn [_] (.pause audio-el))))))))
+      (catch js/Error _ nil))
     (.addEventListener play-btn "click" (fn [_] (toggle-play)))
     (.addEventListener close-btn "click"
       (fn [_]
@@ -69,7 +100,17 @@
       (fn [e]
         (when (.-duration audio-el)
           (set! (.-currentTime audio-el) (js/parseFloat (.. e -target -value))))))
-    (.addEventListener audio-el "timeupdate" (fn [_] (update-player-ui)))
+    ;; Throttled timeupdate: update UI + save state every ~5s
+    (let [last-save (atom 0)]
+      (.addEventListener audio-el "timeupdate"
+        (fn [_]
+          (update-player-ui)
+          (let [now (js/Date.now)]
+            (when (> (- now @last-save) 5000)
+              (reset! last-save now)
+              (save-audio-state))))))
+    ;; Save on pause
+    (.addEventListener audio-el "pause" (fn [_] (save-audio-state)))
     (.addEventListener audio-el "ended"
       (fn [_]
         (set! (.-textContent play-btn) "▶")
@@ -172,5 +213,8 @@
         (.catch (fn [err]
                   (.warn js/console "Popstate navigation failed:" err)
                   (.reload (.-location js/window)))))))
+
+;; Save audio state before page unload
+(.addEventListener js/window "beforeunload" (fn [_] (save-audio-state)))
 
 (init)

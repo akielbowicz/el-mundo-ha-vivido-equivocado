@@ -9,7 +9,8 @@ build: install dist
     npx squint compile && \
     node scripts/build-episodes.mjs && \
     node scripts/build-org-pages.mjs && \
-    cp resources/CNAME dist/
+    cp resources/CNAME dist/ && \
+    node scripts/inject-player.mjs
 
 serve: install build
     serve dist -p 8080 --no-clipboard
