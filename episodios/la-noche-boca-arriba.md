@@ -7,7 +7,6 @@ authors:
   - "Sasha"
 duration: "22:00"
 genre: "Cuento comentado"
-audio: "https://example.com/audio/la-noche-boca-arriba.mp3"
 image: "/images/la-noche-boca-arriba.svg"
 image_alt: "Portada del episodio La noche boca arriba"
 tags:
