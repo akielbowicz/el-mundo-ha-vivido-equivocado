@@ -19,6 +19,8 @@ build: bundle-js
     node scripts/build-org-pages.mjs
     cp resources/CNAME dist/
     node scripts/inject-player.mjs
+    # Copy referenced materials assets
+    cp -r materiales/raw dist/materiales/ 2>/dev/null || true
 
 serve: install build
     serve dist -p 8080 --no-clipboard
