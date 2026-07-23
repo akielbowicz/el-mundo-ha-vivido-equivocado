@@ -43,8 +43,20 @@ Keep this managed block so 'openspec update' can refresh the instructions.
 │   ├── style.css          # estilos a11y, responsive, prefers-reduced-motion
 │   └── CNAME              # dominio principal (equivocadxs.ar)
 ├── scripts/
-│   ├── check-reader-mode.mjs  # valida compatibilidad con Firefox Reader Mode
-│   └── a11y-audit.mjs         # html-validate con reglas a11y sobre el built
+│   ├── build-episodes.mjs    # episodios/*.md → HTML
+│   ├── build-textos.mjs      # textos/*.md → HTML + search-index
+│   ├── build-epub.mjs        # textos/*.md → EPUB
+│   ├── build-org-pages.mjs   # .org pages → HTML
+│   ├── episode-template.html # template HTML para episodios
+│   ├── texto-template.html   # template HTML para textos
+│   ├── org-template.html     # template HTML para páginas .org
+│   ├── new-episode.mjs       # scaffolder interactivo para episodios
+│   ├── new-texto.mjs         # scaffolder interactivo para textos
+│   ├── inject-player.mjs     # inyecta global player en HTML
+│   ├── check-reader-mode.mjs # valida compatibilidad con Firefox Reader Mode
+│   └── a11y-audit.mjs        # html-validate con reglas a11y sobre el built
+├── textos/                  # textos fuente (.md con frontmatter)
+├── episodios/               # episodios fuente (.md con frontmatter)
 ├── dist/                  # build output (gitignored)
 ├── squint.edn             # config squint
 ├── lefthook.yml           # pre-commit + pre-push hooks
@@ -58,12 +70,14 @@ Keep this managed block so 'openspec update' can refresh the instructions.
 
 | `just ...` | qué hace |
 |------------|----------|
-| `build` | npm install → squint compile → cp CNAME → dist/ |
+| `build` | npm install → squint compile → episodios → textos → EPUB → org pages → CNAME → player |
 | `serve` | build + sirve en http://localhost:8080 |
-| `watch` | recompila al cambiar src/ |
+| `watch` | recompila squint al cambiar src/ |
 | `check-html` | valida HTML semántico + compatibilidad con Reader Mode |
 | `check-a11y` | html-validate con reglas a11y sobre el built |
 | `check` | todos los checks |
+| `new-episode` | scaffolder interactivo para nuevo episodio |
+| `new-texto` | scaffolder interactivo para nuevo texto |
 | `clean` | rm -rf dist node_modules |
 
 ## Lefthook hooks

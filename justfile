@@ -9,6 +9,7 @@ build: install dist
     npx squint compile && \
     node scripts/build-episodes.mjs && \
     node scripts/build-textos.mjs && \
+    node scripts/build-epub.mjs && \
     node scripts/build-org-pages.mjs && \
     cp resources/CNAME dist/ && \
     node scripts/inject-player.mjs
