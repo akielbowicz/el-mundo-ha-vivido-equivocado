@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="{{description}}">
+<title>{{title}} — El mundo ha vivido equivocado</title>
+<link rel="stylesheet" href="/style.css">
+<!-- Cloudflare Web Analytics -->
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "REPLACE_ME"}'></script>
+</head>
+<body>
+<a href="#main-content" class="skip-link">Saltar al contenido principal</a>
+<header>
+<div class="container">
+<p class="breadcrumb"><a href="/">Inicio</a> / <a href="/textos/">Textos</a> / {{title}}</p>
+<h1 class="site-title">{{title}}</h1>
+<p class="site-tagline">{{description}}</p>
+<nav aria-label="Principal">
+<ul>
+<li><a href="/">Inicio</a></li>
+<li><a href="/episodios/">Episodios</a></li>
+<li><a href="/textos/" aria-current="page">Textos</a></li>
+<li><a href="/sobre/">Sobre el programa</a></li>
+<li><a href="/contacto/">Sugerir un cuento</a></li>
+</ul>
+</nav>
+</div>
+</header>
+<main id="main-content">
+<article>
+<div class="container">
+<header>
+<p class="episode-meta">
+<time datetime="{{date_iso}}">{{date_display}}</time>
+{{#author}} · por {{author}}{{/author}}
+{{#genre}} · <span class="badge badge-genre">{{genre}}</span>{{/genre}}
+</p>
+{{#license}}
+<p class="episode-meta">Licencia: {{license}}</p>
+{{/license}}
+</header>
+
+{{#episode_slug}}
+<section class="texto-episode-link" aria-label="Episodio relacionado">
+<p>📖 Este texto se leyó en el episodio <a href="/episodios/{{episode_slug}}/">{{episode_link_text}}</a>.</p>
+</section>
+{{/episode_slug}}
+
+<div class="episode-content">
+{{content}}
+</div>
+
+<footer class="texto-actions">
+{{#epub_slug}}
+<p><a href="/textos/{{epub_slug}}.epub" class="texto-download-link" download>⬇ Descargar EPUB</a></p>
+{{/epub_slug}}
+<p><button type="button" class="print-btn" onclick="window.print()">🖨️ Imprimir / PDF</button></p>
+</footer>
+</div>
+</article>
+
+<nav class="episode-nav" aria-label="Navegación entre textos">
+<div class="container">
+{{#prev}}<a href="/textos/{{slug}}/" class="prev">← {{title}}</a>{{/prev}}
+{{#next}}<a href="/textos/{{slug}}/" class="next">{{title}} →</a>{{/next}}
+</div>
+</nav>
+</main>
+<footer>
+<div class="container">
+<p>© 2026 El mundo ha vivido equivocado</p>
+</div>
+</footer>
+
+{{GLOBAL_PLAYER}}
+
+<script type="module" src="/core.mjs"></script>
+</body>
+</html>

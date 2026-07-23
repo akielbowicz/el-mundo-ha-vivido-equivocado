@@ -1021,12 +1021,24 @@ footer {
   outline-offset: 2px;
 }
 
-/* ── Print ─────────────────────────────── */
+/* ── Print ─────────────────────────────────── */
 
 @media print {
-  header, footer, nav, .skip-link, .global-player, .play-btn { display: none; }
-  body { color: #000; background: #fff; }
-  a { text-decoration: underline; }
+  header, footer, nav, .skip-link, .global-player, .play-btn, .episode-nav,
+  .texto-actions, .texto-episode-link, .search-container, .filter-chips,
+  .filter-section, .filter-empty, .platform-section { display: none; }
+  body { color: #000; background: #fff; font-size: 12pt; }
+  a { text-decoration: underline; color: #000; }
+  a[href]:after { content: " (" attr(href) ")"; font-size: 0.8em; color: #555; }
+  a[href^="/"]:after { content: " (https://equivocadxs.ar" attr(href) ")"; font-size: 0.8em; color: #555; }
+  a[href^="#"]:after { display: none; }
+  .container { max-width: 100%; padding: 0; }
+  article { page-break-inside: avoid; border: none; }
+  h1, h2, h3 { page-break-after: avoid; }
+  .episode-content { max-width: 100%; }
+  .episode-content blockquote { border-left-color: #999; background: none; }
+  .episode-video { display: none; }
+  .episode-audio { display: none; }
 }
 
 /* ── Error pages ───────────────────────── */

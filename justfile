@@ -8,6 +8,7 @@ build: install dist
     set -eo pipefail; \
     npx squint compile && \
     node scripts/build-episodes.mjs && \
+    node scripts/build-textos.mjs && \
     node scripts/build-org-pages.mjs && \
     cp resources/CNAME dist/ && \
     node scripts/inject-player.mjs
@@ -26,6 +27,10 @@ check-html: install
 # Full a11y audit against built site (pre-push)
 check-a11y: install
     node scripts/a11y-audit.mjs
+
+# Create a new texto from interactive prompts
+new-texto:
+    node scripts/new-texto.mjs
 
 # Run all checks
 check: check-html check-a11y
