@@ -1,6 +1,7 @@
 ;; source paths for .cljs files; copy-resources matches by extension
+;; Compile to intermediate dir, then bundle with esbuild to dist/
 {:paths ["src" "resources"]
- :output-dir "dist"
+ :output-dir ".squint-cache"
  :copy-resources [:css :html :svg]
  :extension ".mjs"
- :elide-imports true}
+ :elide-imports false}

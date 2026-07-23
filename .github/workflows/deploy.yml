@@ -25,15 +25,28 @@ jobs:
           node-version: 22
           cache: npm
 
-      - name: Validate HTML
-        run: |
-          npm install --silent
-          npx html-validate resources/index.html
-
       - name: Build site
+        run: just build
+
+      - name: Validate HTML
+        run: just check-html
+
+      - name: Validate reader mode
         run: |
-          npx squint compile
-          cp resources/CNAME dist/
+          node scripts/check-reader-mode.mjs dist/index.html
+          node scripts/check-reader-mode.mjs dist/episodios/index.html
+          node scripts/check-reader-mode.mjs dist/textos/index.html
+
+      - name: Verify artifacts
+        run: |
+          test -f dist/search-index.json || { echo "Missing search-index.json"; exit 1; }
+          test -f dist/core.mjs || { echo "Missing core.mjs"; exit 1; }
+          test -f dist/404.html || { echo "Missing 404.html"; exit 1; }
+          test -d dist/episodios || { echo "Missing episodios/"; exit 1; }
+          test -d dist/textos || { echo "Missing textos/"; exit 1; }
+
+      - name: JS smoke test
+        run: just check-js
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
