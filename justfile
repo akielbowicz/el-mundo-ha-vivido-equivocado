@@ -21,6 +21,8 @@ build: bundle-js
     node scripts/inject-player.mjs
     # Copy referenced materials assets
     cp -r materiales/raw dist/materiales/ 2>/dev/null || true
+    # Clean up stale flat files that were moved to directory indexes
+    rm -f dist/paginas/*.html
 
 serve: install build
     serve dist -p 8080 --no-clipboard

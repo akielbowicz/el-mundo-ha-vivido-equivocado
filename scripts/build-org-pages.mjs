@@ -89,8 +89,17 @@ async function main() {
     const bodyHtml = orgToHtml(raw);
 
     // Determine output path relative to dist/
-    // materiales/index.org → dist/materiales/index.html
-    const relPath = file.replace(/\.org$/, ".html");
+    // Non-index files (paginas/sobre.org) → dist/paginas/sobre/index.html
+    // Index files (materiales/index.org) → dist/materiales/index.html
+    const isIndex = basename(file) === "index.org";
+    let relPath;
+    if (isIndex) {
+      relPath = file.replace(/\.org$/, ".html");
+    } else {
+      const dir = dirname(file);
+      const slug = basename(file).replace(/\.org$/, "");
+      relPath = join(dir, slug, "index.html");
+    }
     const outPath = join(DIST_DIR, relPath);
 
     // Determine page title: first org heading, or filename fallback
