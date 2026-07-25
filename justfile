@@ -6,11 +6,11 @@ install:
 
 # Squint compiles to .squint-cache/, then esbuild bundles to dist/
 bundle-js: install dist
-    npx squint compile
-    npx esbuild .squint-cache/core.mjs --bundle --outfile=dist/core.mjs --format=esm --platform=browser
-    cp .squint-cache/index.html .squint-cache/404.html .squint-cache/style.css dist/ 2>/dev/null || true
-    cp -r .squint-cache/images dist/ 2>/dev/null || true
-    rm -f dist/search.mjs  # bundled into core.mjs
+	npx squint compile
+	cp .squint-cache/search.mjs dist/search.mjs 2>/dev/null || true
+	npx esbuild .squint-cache/core.mjs --bundle --outfile=dist/core.js --format=esm --platform=browser
+	cp .squint-cache/index.html .squint-cache/404.html .squint-cache/style.css dist/ 2>/dev/null || true
+	cp -r .squint-cache/images dist/ 2>/dev/null || true
 
 build: bundle-js
     node scripts/build-episodes.mjs

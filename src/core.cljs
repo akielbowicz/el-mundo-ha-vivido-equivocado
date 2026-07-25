@@ -7,6 +7,15 @@
 
 (.info js/console "El mundo ha vivido equivocado — loaded")
 
+;; Helper: get search module functions from window (set by search.mjs)
+(defn search-init [index]
+  (let [f (.-__searchInit js/window)]
+    (when f (f index))))
+
+(defn search-init-filters []
+  (let [f (.-__searchFilters js/window)]
+    (when f (f))))
+
 ;; ── Cached search index ─────────────────────
 
 (def search-index (atom nil))
@@ -143,13 +152,11 @@
       (let [input (.querySelector js/document "#search-input")]
         (when input
           (try
-            (-> (import "./search.mjs")
-                (.then (fn [mod] (.init mod cached))))
+            (search-init cached)
             (catch js/Error e
               (.warn js/console "Search re-init failed:" e))))))
     (try
-      (-> (import "./search.mjs")
-          (.then (fn [mod] (.init-filters mod))))
+      (search-init-filters)
       (catch js/Error e
         (.warn js/console "Filter chips re-init failed:" e)))))
 
@@ -197,8 +204,7 @@
       (.then (fn [res] (.json res)))
       (.then (fn [index]
                (reset! search-index index)
-               (-> (import "./search.mjs")
-                   (.then (fn [mod] (.init mod index))))))
+               (search-init index)))
       (.catch (fn [e] (.warn js/console "Search failed to load:" e)))))
 
 (defn init []
@@ -206,10 +212,9 @@
   (init-play-buttons)
   (init-nav)
   (load-search-index)
-  ;; Filter chips init (needs search.mjs loaded)
+  ;; Filter chips init
   (try
-    (-> (import "./search.mjs")
-        (.then (fn [mod] (.init-filters mod))))
+    (search-init-filters)
     (catch js/Error e
       (.warn js/console "Filter chips failed to load:" e))))
 
