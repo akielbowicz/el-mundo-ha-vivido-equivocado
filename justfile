@@ -7,7 +7,8 @@ install:
 # Squint compiles to .squint-cache/, then esbuild bundles to dist/
 bundle-js: install dist
 	npx squint compile
-	cp .squint-cache/search.mjs dist/search.mjs 2>/dev/null || true
+	# Copy search as native JS module (no squint compile needed)
+	cp src/search.js dist/search.mjs
 	npx esbuild .squint-cache/core.mjs --bundle --outfile=dist/core.js --format=esm --platform=browser
 	cp .squint-cache/index.html .squint-cache/404.html .squint-cache/style.css dist/ 2>/dev/null || true
 	cp -r .squint-cache/images dist/ 2>/dev/null || true
@@ -28,8 +29,8 @@ serve: install build
     serve dist -p 8080 --no-clipboard
 
 watch: install
-    npx squint watch &
-    npx esbuild .squint-cache/core.mjs --bundle --outfile=dist/core.mjs --format=esm --platform=browser --watch &
+	npx squint watch &
+	npx esbuild .squint-cache/core.mjs --bundle --outfile=dist/core.js --format=esm --platform=browser --watch &
 
 # Validate HTML + reader-mode compatibility (pre-commit)
 check-html: install

@@ -40,10 +40,14 @@ jobs:
       - name: Verify artifacts
         run: |
           test -f dist/search-index.json || { echo "Missing search-index.json"; exit 1; }
-          test -f dist/core.mjs || { echo "Missing core.mjs"; exit 1; }
+          test -f dist/core.js || { echo "Missing core.js"; exit 1; }
+          test -f dist/search.mjs || { echo "Missing search.mjs"; exit 1; }
           test -f dist/404.html || { echo "Missing 404.html"; exit 1; }
           test -d dist/episodios || { echo "Missing episodios/"; exit 1; }
           test -d dist/textos || { echo "Missing textos/"; exit 1; }
+
+      - name: Install Playwright Chromium
+        run: npx playwright install chromium
 
       - name: JS smoke test
         run: just check-js
