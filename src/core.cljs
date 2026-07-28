@@ -7,6 +7,47 @@
 
 (.info js/console "El mundo ha vivido equivocado — loaded")
 
+;; ── Error Reporting ─────────────────────────
+
+(def ^:const REPORTED_ERRORS (atom #{}))
+
+(defn- should-report-error? [msg url]
+  (let [s (str msg)]
+    (and
+      ;; Skip CORS errors from external resources
+      (not (re-find #"cloudflareinsights" s))
+      (not (re-find #"net::ERR_FAILED.*cloudflare" (or url "")))
+      ;; Skip script load failures from extensions
+      (not (re-find #"chrome-extension://" (or url "")))
+      ;; Skip ResizeObserver loop (benign and browser-specific)
+      (not (re-find #"ResizeObserver" s)))))
+
+(defn- report-error [label msg url line col error]
+  (try
+    ;; Deduplicate by message to avoid noise
+    (when (and msg (should-report-error? msg url))
+      (let [key (str msg ":" url)]
+        (when-not (@REPORTED_ERRORS key)
+          (swap! REPORTED_ERRORS conj key)
+          (.warn js/console "[error-report]" label ":" msg
+            (when url (str "at " url))
+            (when error error)))))
+    (catch js/Error _ nil)))
+
+;; Global error handler for uncaught exceptions
+(set! (.-onerror js/window)
+  (fn [msg url line col error]
+    (report-error "uncaught" msg url line col error)))
+
+;; Global handler for unhandled promise rejections
+(.addEventListener js/window "unhandledrejection"
+  (fn [e]
+    (let [reason (.-reason e)]
+      (report-error "unhandled-rejection"
+        (str (or (and reason (.-message reason)) reason))
+        (str (.-location js/window))
+        0 0 reason))))
+
 ;; Helper: get search module functions from window (set by search.mjs)
 (defn search-init [index]
   (let [f (.-__searchInit js/window)]
