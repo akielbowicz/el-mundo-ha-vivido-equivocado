@@ -54,6 +54,7 @@ Keep this managed block so 'openspec update' can refresh the instructions.
 │   ├── new-texto.mjs         # scaffolder interactivo para textos
 │   ├── inject-player.mjs     # inyecta global player en HTML
 │   ├── check-reader-mode.mjs # valida compatibilidad con Firefox Reader Mode
+│   ├── check-epub.mjs        # valida EPUBs con epubcheck-ts
 │   └── a11y-audit.mjs        # html-validate con reglas a11y sobre el built
 ├── textos/                  # textos fuente (.md con frontmatter)
 ├── episodios/               # episodios fuente (.md con frontmatter)
@@ -75,6 +76,7 @@ Keep this managed block so 'openspec update' can refresh the instructions.
 | `watch` | recompila squint al cambiar src/ |
 | `check-html` | valida HTML semántico + compatibilidad con Reader Mode |
 | `check-a11y` | html-validate con reglas a11y sobre el built |
+| `check-epub` | valida EPUBs en dist/textos/ con epubcheck-ts |
 | `check` | todos los checks |
 | `new-episode` | scaffolder interactivo para nuevo episodio |
 | `new-texto` | scaffolder interactivo para nuevo texto |
@@ -103,7 +105,7 @@ Keep this managed block so 'openspec update' can refresh the instructions.
 
 ## Squint config
 
-- `squint.edn` con `:elide-imports true` (no necesita runtime externo para código simple)
+- `squint.edn` con `:elide-imports false` — Squint emite imports, esbuild los resuelve al bundlear
 - `:copy-resources [:css :html]` — solo copia archivos .css y .html de `resources/` a `dist/`
 - Si se agrega un nuevo tipo de recurso (svg, json, fonts, imágenes), hay que añadirlo a `:copy-resources` en `squint.edn`
 - `:extension ".mjs"` — modules ES

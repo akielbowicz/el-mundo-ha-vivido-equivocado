@@ -45,12 +45,16 @@ check-a11y: install
 new-texto:
     node scripts/new-texto.mjs
 
+# Validate EPUB files in dist/textos/ using epubcheck-ts
+check-epub: build
+    node scripts/check-epub.mjs
+
 # Run all checks
 check-js: build
     node scripts/check-js.mjs
 
 # Run all checks
-check: check-html check-a11y check-js
+check: check-html check-a11y check-js check-epub
 
 # Create a new episode from interactive prompts
 new-episode:

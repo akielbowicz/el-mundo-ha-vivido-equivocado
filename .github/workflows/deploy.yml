@@ -51,6 +51,9 @@ jobs:
           test -d dist/episodios || { echo "Missing episodios/"; exit 1; }
           test -d dist/textos || { echo "Missing textos/"; exit 1; }
 
+      - name: Validate EPUB files
+        run: just check-epub
+
       - name: Install Playwright Chromium
         run: npx playwright install chromium
 
