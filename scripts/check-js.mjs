@@ -155,6 +155,43 @@ async function runTests() {
     }
   }
 
+  async function testNavLoader() {
+    const ctx = await browser.newContext({ javaScriptEnabled: true });
+    const tab = await ctx.newPage();
+
+    await tab.goto(`http://localhost:${PORT}/episodios/el-aleph/`, {
+      waitUntil: "networkidle",
+      timeout: 5000,
+    });
+
+    const exists = await tab.evaluate(() =>
+      !!document.querySelector(".nav-loader")
+    );
+    const hiddenByDefault = await tab.evaluate(() => {
+      const el = document.querySelector(".nav-loader");
+      return el ? el.hidden : true;
+    });
+
+    await tab.close();
+    await ctx.close();
+
+    const checks = [
+      { ok: exists, msg: "nav-loader element exists" },
+      { ok: hiddenByDefault, msg: "nav-loader is hidden on page load" },
+    ];
+
+    const allOk = checks.every(c => c.ok);
+    if (allOk) {
+      console.log(`  ✅ nav loader`);
+      passed++;
+    } else {
+      const failures = checks.filter(c => !c.ok).map(c => c.msg);
+      console.log(`  ❌ nav loader — ${failures.join("; ")}`);
+      errors.push({ page: "nav loader", issues: failures });
+      failed++;
+    }
+  }
+
   for (const page of PAGES) {
     const ctx = await browser.newContext({ javaScriptEnabled: true });
     const tab = await ctx.newPage();
@@ -221,6 +258,7 @@ async function runTests() {
   }
 
   await testAudioPersistence();
+  await testNavLoader();
 
   await browser.close();
   server.close();

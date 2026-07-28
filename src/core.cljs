@@ -145,6 +145,35 @@
             (.. btn -dataset -episodeTitle)
             (or (.. btn -dataset -episodeAuthor) "")))))))
 
+;; ── Navigation Loader ──────────────────────
+
+(def nav-loader (atom nil))
+
+(defn init-nav-loader []
+  (let [el (js/document.createElement "div")]
+    (set! (.-className el) "nav-loader")
+    (set! (.-hidden el) true)
+    (.appendChild (.-body js/document) el)
+    (reset! nav-loader el)))
+
+(defn show-nav-loader []
+  (when-let [el @nav-loader]
+    (set! (.-hidden el) false)
+    ;; Trigger animation on next frame
+    (js/requestAnimationFrame
+      (fn []
+        (set! (.-style.width el) "80%")))))
+
+(defn hide-nav-loader []
+  (when-let [el @nav-loader]
+    ;; Jump to 100% then hide after transition
+    (set! (.-style.width el) "100%")
+    (js/setTimeout
+      (fn []
+        (set! (.-hidden el) true)
+        (set! (.-style.width el) "0%"))
+      150)))
+
 ;; ── SPA Navigation ──────────────────────────
 
 (defn is-internal-link [^js a]
@@ -167,6 +196,7 @@
         (.warn js/console "Filter chips re-init failed:" e)))))
 
 (defn swap-content [html]
+  (hide-nav-loader)
   (let [parser (js/DOMParser.)
         doc (.parseFromString parser html "text/html")
         new-main (.querySelector doc "#main-content")
@@ -179,6 +209,7 @@
 
 (defn navigate-to [href]
   (.pushState js/window.history #js {} "" href)
+  (show-nav-loader)
   (-> (js/fetch href)
       (.then (fn [res] (.text res)))
       (.then (fn [html]
@@ -193,6 +224,7 @@
                    (swap-content html)))))
       (.catch (fn [err]
                 (.warn js/console "Navigation failed:" err)
+                (hide-nav-loader)
                 (set! (.-location js/window) href)))))
 
 (defn init-nav []
@@ -215,6 +247,7 @@
         (.catch (fn [e] (.warn js/console "Search failed to load:" e))))))
 
 (defn init []
+  (init-nav-loader)
   (init-player)
   (init-play-buttons)
   (init-nav)
@@ -228,6 +261,7 @@
 ;; Handle browser back/forward
 (.addEventListener js/window "popstate"
   (fn [_]
+    (show-nav-loader)
     (-> (js/fetch (.-location js/window))
         (.then (fn [res] (.text res)))
         (.then (fn [html]
@@ -245,6 +279,7 @@
                      (swap-content html)))))
         (.catch (fn [err]
                   (.warn js/console "Popstate navigation failed:" err)
+                  (hide-nav-loader)
                   (.reload (.-location js/window)))))))
 
 ;; Save audio state before page unload
