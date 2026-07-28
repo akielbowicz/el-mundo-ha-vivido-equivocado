@@ -94,6 +94,67 @@ async function runTests() {
 
   const browser = await chromium.launch({ headless: true });
 
+  // Audio persistence test: set sessionStorage before navigation
+  async function testAudioPersistence() {
+    const ctx = await browser.newContext({ javaScriptEnabled: true });
+    const tab = await ctx.newPage();
+
+    // Set up sessionStorage before navigating to the episode page
+    await tab.goto(`http://localhost:${PORT}/episodios/el-aleph/`, {
+      waitUntil: "domcontentloaded",
+      timeout: 5000,
+    });
+    await tab.evaluate(() => {
+      sessionStorage.setItem("equivocadxs-audio", JSON.stringify({
+        src: "/audio/el-aleph.mp3",
+        title: "El Aleph",
+        author: "Jorge Luis Borges",
+        currentTime: 42,
+        paused: true,
+      }));
+    });
+    // Reload — player should restore state from sessionStorage
+    await tab.reload({ waitUntil: "networkidle", timeout: 5000 });
+
+    const playerVisible = await tab.evaluate(() => {
+      const el = document.querySelector("#global-player");
+      return el ? !el.hidden : false;
+    });
+    const playerTitle = await tab.evaluate(() => {
+      const el = document.querySelector("#global-title");
+      return el ? el.textContent : "";
+    });
+    const audioSrc = await tab.evaluate(() => {
+      const el = document.querySelector("#global-audio");
+      return el ? el.getAttribute("src") : "";
+    });
+    const preload = await tab.evaluate(() => {
+      const el = document.querySelector("#global-audio");
+      return el ? el.getAttribute("preload") : "";
+    });
+
+    await tab.close();
+    await ctx.close();
+
+    const checks = [
+      { ok: playerVisible, msg: "player is visible" },
+      { ok: playerTitle === "El Aleph", msg: `player title is "El Aleph" (got "${playerTitle}")` },
+      { ok: audioSrc === "/audio/el-aleph.mp3", msg: `audio src is restored (got "${audioSrc}")` },
+      { ok: preload === "metadata", msg: `preload is "metadata" (got "${preload}")` },
+    ];
+
+    const allOk = checks.every(c => c.ok);
+    if (allOk) {
+      console.log(`  ✅ audio persistence`);
+      passed++;
+    } else {
+      const failures = checks.filter(c => !c.ok).map(c => c.msg);
+      console.log(`  ❌ audio persistence — ${failures.join("; ")}`);
+      errors.push({ page: "audio persistence", issues: failures });
+      failed++;
+    }
+  }
+
   for (const page of PAGES) {
     const ctx = await browser.newContext({ javaScriptEnabled: true });
     const tab = await ctx.newPage();
@@ -106,7 +167,7 @@ async function runTests() {
       if (msg.type() === "error" || msg.type() === "warning") {
         if (msg.type() === "error") {
           // Ignore CORS errors from external resources (CF Web Analytics on localhost)
-          if (text.includes("cloudflareinsights") || text.includes("CORS") || text.includes("Access-Control-Allow-Origin") || text.includes("net::ERR_FAILED")) {
+          if (text.includes("cloudflareinsights") || (text.includes("net::ERR_FAILED") && loc.includes("cloudflareinsights"))) {
             return;
           }
           // Ignore 404 for the page itself (expected for 404 test)
@@ -158,6 +219,8 @@ async function runTests() {
       await ctx.close();
     }
   }
+
+  await testAudioPersistence();
 
   await browser.close();
   server.close();

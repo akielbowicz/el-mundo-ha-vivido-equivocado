@@ -51,11 +51,11 @@
 
 (defn- save-audio-state []
   (try
-    (let [saved (.. js/sessionStorage -getItem "equivocadxs-audio")]
+    (let [saved (.getItem js/sessionStorage "equivocadxs-audio")]
       (let [data (if saved (js/JSON.parse saved) #js{})]
         (set! (.-currentTime data) (.-currentTime audio-el))
         (set! (.-paused data) (.-paused audio-el))
-        (.. js/sessionStorage -setItem "equivocadxs-audio" (js/JSON.stringify data))))
+        (.setItem js/sessionStorage "equivocadxs-audio" (js/JSON.stringify data))))
     (catch js/Error _ nil)))
 
 (defn load-audio [src title author]
@@ -69,7 +69,7 @@
     (set! (.-hidden player-el) false)
     ;; Save to sessionStorage for persistence across full page loads
     (try
-      (.. js/sessionStorage -setItem "equivocadxs-audio"
+      (.setItem js/sessionStorage "equivocadxs-audio"
         (js/JSON.stringify #js {:src src :title title :author author :currentTime 0 :paused true}))
       (catch js/Error _ nil))
     (.play audio-el)))
@@ -84,20 +84,26 @@
   (when (and audio-el play-btn close-btn range-el)
     ;; Restore audio state from sessionStorage (after full page reload)
     (try
-      (let [saved (.. js/sessionStorage -getItem "equivocadxs-audio")]
+      (let [saved (.getItem js/sessionStorage "equivocadxs-audio")]
         (when saved
           (let [data (js/JSON.parse saved)]
             (when (and (.-src data) (.-title data))
-              (load-audio (.-src data) (.-title data) (or (.-author data) ""))
-              ;; Restore playback position after load-audio starts playing
-              (when (.-currentTime data)
-                (.addEventListener audio-el "loadedmetadata"
-                  (fn [_]
-                    (set! (.-currentTime audio-el) (.-currentTime data)))))
-              ;; If was paused, pause after loading
-              (when (.-paused data)
-                (.addEventListener audio-el "canplay"
-                  (fn [_] (.pause audio-el))))))))
+              ;; Set preload before src to guarantee loadedmetadata fires
+              (set! (.-preload audio-el) "metadata")
+              (set! (.-src audio-el) (.-src data))
+              (set! (.-textContent title-el) (.-title data))
+              (set! (.-textContent author-el) (or (.-author data) ""))
+              (set! (.-hidden player-el) false)
+              ;; Restore position once metadata is loaded — handle race
+              ;; by checking readyState before attaching listener
+              (let [restore (fn []
+                              (when (.-currentTime data)
+                                (set! (.-currentTime audio-el) (.-currentTime data)))
+                              (when (.-paused data)
+                                (.pause audio-el)))]
+                (if (>= (.-readyState audio-el) 1)
+                  (restore)
+                  (.addEventListener audio-el "loadedmetadata" (fn [_] (restore)))))))))
       (catch js/Error _ nil))
     (.addEventListener play-btn "click" (fn [_] (toggle-play)))
     (.addEventListener close-btn "click"
@@ -200,12 +206,13 @@
 ;; ── Init ─────────────────────────────────────
 
 (defn load-search-index []
-  (-> (js/fetch "/search-index.json")
-      (.then (fn [res] (.json res)))
-      (.then (fn [index]
-               (reset! search-index index)
-               (search-init index)))
-      (.catch (fn [e] (.warn js/console "Search failed to load:" e)))))
+  (when (.querySelector js/document "#search-input")
+    (-> (js/fetch "/search-index.json")
+        (.then (fn [res] (.json res)))
+        (.then (fn [index]
+                 (reset! search-index index)
+                 (search-init index)))
+        (.catch (fn [e] (.warn js/console "Search failed to load:" e))))))
 
 (defn init []
   (init-player)
@@ -229,10 +236,12 @@
                        canonical (.querySelector doc "link[rel=canonical]")]
                    (if (and canonical (.-href canonical))
                      ;; Follow canonical — update URL and fetch again
-                     (.replaceState js/window.history #js {} "" (.-href canonical))
-                     (-> (js/fetch (.-href canonical))
-                         (.then (fn [r] (.text r)))
-                         (.then (fn [h] (swap-content h))))
+                     (do
+                       (.replaceState js/window.history #js {} "" (.-href canonical))
+                       (-> (js/fetch (.-href canonical))
+                           (.then (fn [r] (.text r)))
+                           (.then (fn [h] (swap-content h)))))
+                     ;; Normal page — swap content
                      (swap-content html)))))
         (.catch (fn [err]
                   (.warn js/console "Popstate navigation failed:" err)
