@@ -20,6 +20,7 @@ build: bundle-js
     node scripts/build-org-pages.mjs
     cp resources/CNAME dist/
     node scripts/inject-player.mjs
+    node scripts/build-sitemap.mjs
     # Copy referenced materials assets
     cp -r materiales/raw dist/materiales/ 2>/dev/null || true
     # Clean up stale flat files that were moved to directory indexes
