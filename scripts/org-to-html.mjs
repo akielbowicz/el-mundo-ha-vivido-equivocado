@@ -2,7 +2,9 @@
  * org-to-html.mjs
  *
  * Minimal org-mode → HTML converter for the subset of org-mode
- * used in this project: headings, tables, unordered lists, links, and paragraphs.
+ * used in this project: headings, tables (with header support),
+ * unordered/ordered lists, links, fixed-width blocks, paragraphs,
+ * and inline formatting (bold, italic, code).
  *
  * Usage: import { orgToHtml } from "./org-to-html.mjs";
  */
@@ -17,53 +19,90 @@ function escapeHtml(str) {
     .replace(/"/g, "&quot;");
 }
 
-function renderLinks(text) {
-  // text is raw (unescaped). Split into link and non-link parts,
-  // escape each appropriately.
-  //
-  // Strategy: tokenize — find all matches, then rebuild the string
-  // escaping non-link text and properly escaping link hrefs/labels.
-
+/**
+ * Tokenize inline content: links, bare URLs, bold (*text*), italic (/text/),
+ * code (=text=, ~text~). Unmatched delimiters render literally.
+ */
+function tokenizeInline(text) {
   const tokens = [];
-  let lastIndex = 0;
+  let i = 0;
 
-  // Match org-mode links
-  const linkRegex = /\[\[([^\]]+)\]\[([^\]]*)\]\]/g;
-  let match;
-  while ((match = linkRegex.exec(text)) !== null) {
-    // Non-link text before this match
-    if (match.index > lastIndex) {
-      tokens.push({ type: "text", value: text.slice(lastIndex, match.index) });
+  while (i < text.length) {
+    const remaining = text.slice(i);
+
+    // Org-mode link [[href][label]]
+    const linkMatch = remaining.match(/^\[\[([^\]]+)\]\[([^\]]*)\]\]/);
+    if (linkMatch) {
+      tokens.push({ type: "link", href: linkMatch[1].replace(/^file:/, ""), label: linkMatch[2] || linkMatch[1] });
+      i += linkMatch[0].length;
+      continue;
     }
-    const href = match[1].replace(/^file:/, "");
-    const label = match[2] || match[1];
-    tokens.push({ type: "link", href, label });
-    lastIndex = match.index + match[0].length;
-  }
 
-  // Match bare URLs in remaining text
-  const urlRegex = /(https?:\/\/[^\s<]+)/g;
-  const remaining = text.slice(lastIndex);
-  let urlMatch;
-  let urlLast = 0;
-  while ((urlMatch = urlRegex.exec(remaining)) !== null) {
-    if (urlMatch.index > urlLast) {
-      tokens.push({ type: "text", value: remaining.slice(urlLast, urlMatch.index) });
+    // Bold: *text* (not ** which is heading syntax, already handled by parser)
+    const boldMatch = remaining.match(/^\*(\S[\s\S]*?\S|\S)\*(?!\w)/);
+    if (boldMatch && !remaining.startsWith("**")) {
+      tokens.push({ type: "bold", content: tokenizeInline(boldMatch[1]) });
+      i += boldMatch[0].length;
+      continue;
     }
-    tokens.push({ type: "link", href: urlMatch[1], label: urlMatch[1] });
-    urlLast = urlMatch.index + urlMatch[0].length;
-  }
-  if (urlLast < remaining.length) {
-    tokens.push({ type: "text", value: remaining.slice(urlLast) });
+
+    // Italic: /text/ (not preceded by word char, to avoid matching URLs)
+    const italicMatch = remaining.match(/^\/(\S[\s\S]*?\S|\S)\/(?!\w)/);
+    if (italicMatch && i > 0 && !/\w/.test(text[i - 1])) {
+      tokens.push({ type: "italic", content: tokenizeInline(italicMatch[1]) });
+      i += italicMatch[0].length;
+      continue;
+    }
+    // Italic at start of string
+    if (italicMatch && i === 0) {
+      tokens.push({ type: "italic", content: tokenizeInline(italicMatch[1]) });
+      i += italicMatch[0].length;
+      continue;
+    }
+
+    // Code: =text= or ~text~
+    const codeMatch = remaining.match(/^[=~]([^=~]+)[=~]/);
+    if (codeMatch) {
+      tokens.push({ type: "code", content: codeMatch[1] });
+      i += codeMatch[0].length;
+      continue;
+    }
+
+    // Bare URL
+    const urlMatch = remaining.match(/^(https?:\/\/[^\s<]+)/);
+    if (urlMatch) {
+      tokens.push({ type: "link", href: urlMatch[1], label: urlMatch[1] });
+      i += urlMatch[0].length;
+      continue;
+    }
+
+    // Plain character
+    tokens.push({ type: "text", value: text[i] });
+    i++;
   }
 
-  // Build result
+  return tokens;
+}
+
+function renderInlineTokens(tokens) {
   return tokens.map(t => {
-    if (t.type === "link") {
-      return `<a href="${escapeHtml(t.href)}">${escapeHtml(t.label)}</a>`;
+    switch (t.type) {
+      case "link":
+        return `<a href="${escapeHtml(t.href)}">${escapeHtml(t.label)}</a>`;
+      case "bold":
+        return `<strong>${renderInlineTokens(t.content)}</strong>`;
+      case "italic":
+        return `<em>${renderInlineTokens(t.content)}</em>`;
+      case "code":
+        return `<code>${escapeHtml(t.content)}</code>`;
+      default:
+        return escapeHtml(t.value);
     }
-    return escapeHtml(t.value);
   }).join("");
+}
+
+function renderInline(text) {
+  return renderInlineTokens(tokenizeInline(text));
 }
 
 /* ── Parsing ─────────────────────────────── */
@@ -71,8 +110,10 @@ function renderLinks(text) {
 /**
  * Parse org-mode text into an array of block objects:
  *   { type: "heading", level: 1..6, text: "..." }
- *   { type: "table", rows: [["cell1","cell2"], ...] }
- *   { type: "list", items: ["item1", "item2"] }
+ *   { type: "table", rows: [["cell1","cell2"], ...], hasHeader: bool }
+ *   { type: "ordered-list", items: ["item1", "item2"] }
+ *   { type: "unordered-list", items: ["item1", "item2"] }
+ *   { type: "fixed-width", text: "..." }
  *   { type: "paragraph", text: "..." }
  *   { type: "blank" }
  */
@@ -81,6 +122,11 @@ function parseOrg(text) {
   const blocks = [];
   let i = 0;
 
+  let currentPara = [];
+  let currentUnordered = [];
+  let currentOrdered = [];
+  let currentFixedLines = [];
+
   function flushParagraph() {
     if (currentPara.length > 0) {
       blocks.push({ type: "paragraph", text: currentPara.join(" ") });
@@ -88,13 +134,29 @@ function parseOrg(text) {
     }
   }
 
-  let currentPara = [];
-  let currentList = [];
+  function flushUnorderedList() {
+    if (currentUnordered.length > 0) {
+      blocks.push({ type: "unordered-list", items: currentUnordered });
+      currentUnordered = [];
+    }
+  }
+
+  function flushOrderedList() {
+    if (currentOrdered.length > 0) {
+      blocks.push({ type: "ordered-list", items: currentOrdered });
+      currentOrdered = [];
+    }
+  }
 
   function flushList() {
-    if (currentList.length > 0) {
-      blocks.push({ type: "list", items: currentList });
-      currentList = [];
+    flushUnorderedList();
+    flushOrderedList();
+  }
+
+  function flushFixedWidth() {
+    if (currentFixedLines.length > 0) {
+      blocks.push({ type: "fixed-width", text: currentFixedLines.join("\n") });
+      currentFixedLines = [];
     }
   }
 
@@ -107,9 +169,8 @@ function parseOrg(text) {
     if (headingMatch) {
       flushParagraph();
       flushList();
-      const level = headingMatch[1].length;
-      const text = headingMatch[2];
-      blocks.push({ type: "heading", level, text });
+      flushFixedWidth();
+      blocks.push({ type: "heading", level: headingMatch[1].length, text: headingMatch[2] });
       i++;
       continue;
     }
@@ -118,22 +179,32 @@ function parseOrg(text) {
     if (trimmed.startsWith("|") && trimmed.endsWith("|")) {
       flushParagraph();
       flushList();
-      // Skip separator rows (|---+---|---|)
+      flushFixedWidth();
+      // Separator row (|---+---|---|) — marks previous rows as header
       if (/^[\s|:\-+]+$/.test(trimmed)) {
+        const last = blocks[blocks.length - 1];
+        if (last && last.type === "table" && !last.hasHeader) {
+          last.hasHeader = true;
+        }
         i++;
         continue;
       }
-      const cells = trimmed
-        .split("|")
-        .slice(1, -1)
-        .map(c => c.trim());
-      // Find or create last table block
+      const cells = trimmed.split("|").slice(1, -1).map(c => c.trim());
       const last = blocks[blocks.length - 1];
       if (last && last.type === "table") {
         last.rows.push(cells);
       } else {
-        blocks.push({ type: "table", rows: [cells] });
+        blocks.push({ type: "table", rows: [cells], hasHeader: false });
       }
+      i++;
+      continue;
+    }
+
+    // Fixed-width line (colon followed by space)
+    if (trimmed.startsWith(": ")) {
+      flushParagraph();
+      flushList();
+      currentFixedLines.push(trimmed.slice(2));
       i++;
       continue;
     }
@@ -141,8 +212,20 @@ function parseOrg(text) {
     // Unordered list item
     if (trimmed.match(/^[-+]\s+/)) {
       flushParagraph();
-      const itemText = trimmed.replace(/^[-+]\s+/, "");
-      currentList.push(itemText);
+      flushOrderedList();
+      flushFixedWidth();
+      currentUnordered.push(trimmed.replace(/^[-+]\s+/, ""));
+      i++;
+      continue;
+    }
+
+    // Ordered list item (number followed by dot or paren)
+    const olMatch = trimmed.match(/^\d+[.)]\s+(.+)$/);
+    if (olMatch) {
+      flushParagraph();
+      flushUnorderedList();
+      flushFixedWidth();
+      currentOrdered.push(olMatch[1]);
       i++;
       continue;
     }
@@ -151,6 +234,7 @@ function parseOrg(text) {
     if (trimmed === "") {
       flushParagraph();
       flushList();
+      flushFixedWidth();
       i++;
       continue;
     }
@@ -162,8 +246,9 @@ function parseOrg(text) {
 
   flushParagraph();
   flushList();
+  flushFixedWidth();
 
-  // Normalize ragged table rows: pad/truncate each row to max column count
+  // Normalize ragged table rows
   for (const block of blocks) {
     if (block.type === "table" && block.rows.length > 0) {
       const maxCols = Math.max(...block.rows.map(r => r.length));
@@ -185,34 +270,47 @@ function renderBlocks(blocks) {
   for (const block of blocks) {
     switch (block.type) {
       case "heading": {
-        // Shift headings down (h1→h2) because template already has an h1
         const level = Math.min(block.level + 1, 6);
-        html += `<h${level}>${escapeHtml(block.text)}</h${level}>\n`;
+        html += `<h${level}>${renderInline(block.text)}</h${level}>\n`;
         break;
       }
       case "table": {
         html += "<table>\n";
-        for (const row of block.rows) {
+        for (let ri = 0; ri < block.rows.length; ri++) {
+          const row = block.rows[ri];
           html += "  <tr>";
+          const isHeader = block.hasHeader && ri === 0;
           for (const cell of row) {
-            const tag = "td";
-            html += `<${tag}>${renderLinks(cell)}</${tag}>`;
+            const tag = isHeader ? "th" : "td";
+            html += `<${tag}>${renderInline(cell)}</${tag}>`;
           }
           html += "</tr>\n";
         }
         html += "</table>\n";
         break;
       }
-      case "list": {
+      case "unordered-list": {
         html += "<ul>\n";
         for (const item of block.items) {
-          html += `  <li>${renderLinks(item)}</li>\n`;
+          html += `  <li>${renderInline(item)}</li>\n`;
         }
         html += "</ul>\n";
         break;
       }
+      case "ordered-list": {
+        html += "<ol>\n";
+        for (const item of block.items) {
+          html += `  <li>${renderInline(item)}</li>\n`;
+        }
+        html += "</ol>\n";
+        break;
+      }
+      case "fixed-width": {
+        html += `<pre>${escapeHtml(block.text)}</pre>\n`;
+        break;
+      }
       case "paragraph": {
-        html += `<p>${renderLinks(block.text)}</p>\n`;
+        html += `<p>${renderInline(block.text)}</p>\n`;
         break;
       }
     }

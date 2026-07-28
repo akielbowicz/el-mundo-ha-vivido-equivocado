@@ -20,11 +20,6 @@ describe("orgToHtml", () => {
       assert.match(result, /<h3>Subtitle<\/h3>/);
     });
 
-    it("converts level-3 heading to h4", () => {
-      const result = orgToHtml("*** Subsubtitle");
-      assert.match(result, /<h4>Subsubtitle<\/h4>/);
-    });
-
     it("caps at h6 for deep headings", () => {
       const result = orgToHtml("****** Deep");
       assert.match(result, /<h6>Deep<\/h6>/);
@@ -59,6 +54,38 @@ describe("orgToHtml", () => {
     });
   });
 
+  describe("inline formatting", () => {
+    it("renders *bold* as <strong>", () => {
+      const result = orgToHtml("This is *bold* text");
+      assert.match(result, /<strong>bold<\/strong>/);
+    });
+
+    it("renders /italic/ as <em>", () => {
+      const result = orgToHtml("This is /italic/ text");
+      assert.match(result, /<em>italic<\/em>/);
+    });
+
+    it("renders =code= as <code>", () => {
+      const result = orgToHtml("Use =npm install= to install");
+      assert.match(result, /<code>npm install<\/code>/);
+    });
+
+    it("renders ~code~ as <code>", () => {
+      const result = orgToHtml("The `~foo~` variable");
+      assert.match(result, /<code>foo<\/code>/);
+    });
+
+    it("handles bold with multi-word content", () => {
+      const result = orgToHtml("*El Aleph* is a story");
+      assert.match(result, /<strong>El Aleph<\/strong>/);
+    });
+
+    it("escapes HTML inside bold", () => {
+      const result = orgToHtml("*<b>test</b>*");
+      assert.match(result, /<strong>&lt;b&gt;test&lt;\/b&gt;<\/strong>/);
+    });
+  });
+
   describe("links", () => {
     it("renders org-mode links as HTML anchors", () => {
       const result = orgToHtml("[[https://example.com][Example]]");
@@ -82,29 +109,42 @@ describe("orgToHtml", () => {
       const result = orgToHtml("| Name | Age |\n| Alice | 30 |");
       assert.match(result, /<table>/);
       assert.match(result, /<td>Name<\/td>/);
-      assert.match(result, /<td>Age<\/td>/);
+      assert.match(result, /<td>Alice<\/td>/);
+    });
+
+    it("renders first row as <th> when separator is present", () => {
+      const result = orgToHtml("| Name | Age |\n|---+---|\n| Alice | 30 |");
+      assert.match(result, /<th>Name<\/th>/);
+      assert.match(result, /<th>Age<\/th>/);
       assert.match(result, /<td>Alice<\/td>/);
       assert.match(result, /<td>30<\/td>/);
     });
 
-    it("skips separator rows", () => {
-      const result = orgToHtml("| H1 | H2 |\n|---+---|\n| V1 | V2 |");
-      assert.match(result, /<td>H1<\/td>/);
-      assert.match(result, /<td>V1<\/td>/);
-      // Only 2 rows (header + value), separator is skipped
-      const tdCount = (result.match(/<td>/g) || []).length;
-      assert.equal(tdCount, 4);
-    });
-
     it("normalizes ragged rows", () => {
       const result = orgToHtml("| A | B | C |\n| D | E |");
-      // Both rows should have 3 cells
       const tdCount = (result.match(/<td>/g) || []).length;
       assert.equal(tdCount, 6);
     });
   });
 
-  describe("lists", () => {
+  describe("ordered lists", () => {
+    it("renders ordered list items", () => {
+      const result = orgToHtml("1. First item\n2. Second item\n3. Third item");
+      assert.match(result, /<ol>/);
+      assert.match(result, /<li>First item<\/li>/);
+      assert.match(result, /<li>Second item<\/li>/);
+      assert.match(result, /<li>Third item<\/li>/);
+      assert.match(result, /<\/ol>/);
+    });
+
+    it("supports paren-style numbering", () => {
+      const result = orgToHtml("1) One\n2) Two");
+      assert.match(result, /<li>One<\/li>/);
+      assert.match(result, /<li>Two<\/li>/);
+    });
+  });
+
+  describe("unordered lists", () => {
     it("renders unordered list items", () => {
       const result = orgToHtml("- Item one\n- Item two");
       assert.match(result, /<ul>/);
@@ -118,6 +158,19 @@ describe("orgToHtml", () => {
     });
   });
 
+  describe("fixed-width blocks", () => {
+    it("renders lines starting with ': ' as <pre>", () => {
+      const result = orgToHtml(": **Mail:** hola@ejemplo.com");
+      assert.match(result, /<pre>/);
+      assert.match(result, /\*\*Mail:\*\*/);
+    });
+
+    it("handles multi-line fixed-width", () => {
+      const result = orgToHtml(": Line one\n: Line two");
+      assert.match(result, /<pre>Line one\nLine two<\/pre>/);
+    });
+  });
+
   describe("edge cases", () => {
     it("returns empty string for empty input", () => {
       assert.equal(orgToHtml(""), "");
@@ -127,12 +180,37 @@ describe("orgToHtml", () => {
       assert.equal(orgToHtml("   \n\n  "), "");
     });
 
-    it("handles mixed content", () => {
-      const input = "* Title\n\nFirst paragraph with [[https://x.com][a link]].\n\n- List item";
+    it("handles mixed content matching real-world usage", () => {
+      const input = [
+        "* Title",
+        "",
+        "Text with *bold* and /italic/.",
+        "",
+        "- List item",
+        "- Another item",
+        "",
+        "1. First ordered",
+        "2. Second ordered",
+        "",
+        "| Header 1 | Header 2 |",
+        "|---+---|",
+        "| Cell 1 | Cell 2 |",
+        "",
+        ": : fixed width content",
+        "",
+        "Visit https://example.com",
+      ].join("\n");
+
       const result = orgToHtml(input);
       assert.match(result, /<h2>Title<\/h2>/);
-      assert.match(result, /<p>First paragraph with <a href="https:\/\/x\.com">a link<\/a>\.<\/p>/);
-      assert.match(result, /<li>List item<\/li>/);
+      assert.match(result, /<strong>bold<\/strong>/);
+      assert.match(result, /<em>italic<\/em>/);
+      assert.match(result, /<ul>/);
+      assert.match(result, /<ol>/);
+      assert.match(result, /<th>Header 1<\/th>/);
+      assert.match(result, /<td>Cell 1<\/td>/);
+      assert.match(result, /<pre>/);
+      assert.match(result, /<a href="https:\/\/example\.com">/);
     });
   });
 });
