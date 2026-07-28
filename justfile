@@ -54,7 +54,11 @@ check-js: build
     node scripts/check-js.mjs
 
 # Run all checks
-check: check-html check-a11y check-js check-epub
+check: check-html check-a11y check-js check-epub check-tests
+
+# Run unit tests for build pipeline logic
+check-tests:
+    node --test scripts/lib/utils.test.mjs scripts/org-to-html.test.mjs src/search.test.mjs
 
 # Create a new episode from interactive prompts
 new-episode:
