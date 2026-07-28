@@ -53,17 +53,28 @@ describe("slugify", () => {
 });
 
 describe("formatDate", () => {
-  it("formats a date month and year in Spanish locale", () => {
-    const result = formatDate("2026-07-21");
-    assert.ok(result.includes("julio"));
-    assert.ok(result.includes("2026"));
+  it("formats a date in Spanish", () => {
+    assert.equal(formatDate("2026-07-21"), "21 de julio de 2026");
   });
 
-  it("produces same calendar day regardless of timezone shift", () => {
-    const utc = formatDate("2026-07-21");
-    // Should include month and year regardless of timezone
-    assert.ok(utc.includes("julio"));
-    assert.ok(utc.includes("2026"));
+  it("produces same result under any timezone", () => {
+    // Run with different TZ values to verify no timezone-dependent shift
+    const results = [
+      formatDate("2026-07-21"),
+      formatDate("2026-01-01"),
+      formatDate("2025-12-31"),
+    ];
+    assert.equal(results[0], "21 de julio de 2026");
+    assert.equal(results[1], "1 de enero de 2026");
+    assert.equal(results[2], "31 de diciembre de 2025");
+  });
+
+  it("throws on invalid date format", () => {
+    assert.throws(() => formatDate("2026-7-21"), /Invalid date format/);
+    assert.throws(() => formatDate("21-07-2026"), /Invalid date format/);
+    assert.throws(() => formatDate("2026/07/21"), /Invalid date format/);
+    assert.throws(() => formatDate("not-a-date"), /Invalid date format/);
+    assert.throws(() => formatDate(""), /Invalid date format/);
   });
 });
 
