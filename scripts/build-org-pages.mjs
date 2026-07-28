@@ -11,22 +11,11 @@ import { readFileSync, writeFileSync, mkdirSync, existsSync } from "node:fs";
 import { readdir } from "node:fs/promises";
 import { join, dirname, basename } from "node:path";
 import { orgToHtml } from "./org-to-html.mjs";
+import { renderTemplate } from "./lib/utils.mjs";
 
 const SRC_DIRS = ["materiales", "programa", "paginas"];
 const DIST_DIR = "dist";
 const TEMPLATE = readFileSync("scripts/org-template.html", "utf-8");
-const GLOBAL_PLAYER = readFileSync("scripts/global-player.html", "utf-8");
-
-/* ── Helpers ───────────────────────────── */
-
-function renderTemplate(template, vars) {
-  return template
-    .replace(/\{\{(\w+)}}/g, (_, key) => {
-      const val = vars[key];
-      return val !== undefined && val !== null ? String(val) : "";
-    })
-    .replace("{{GLOBAL_PLAYER}}", GLOBAL_PLAYER);
-}
 
 function titleFromOrg(raw) {
   // Use first * heading as page title, fall back to filename
@@ -108,9 +97,15 @@ async function main() {
 
     const desc = descriptionFromContent(bodyHtml);
 
+    // Determine slug for OG URL (strip dist/ prefix and trailing /index.html)
+    const urlSlug = "/" + relPath.replace(/\/index\.html$/, "/");
+    const DEFAULT_OG_IMAGE = "https://equivocadxs.ar/images/og-default.svg";
+
     const pageHtml = renderTemplate(TEMPLATE, {
       title,
       description: desc,
+      slug: urlSlug,
+      og_image: DEFAULT_OG_IMAGE,
       content: bodyHtml,
     });
 

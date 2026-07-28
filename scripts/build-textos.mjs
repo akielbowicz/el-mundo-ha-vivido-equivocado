@@ -11,6 +11,7 @@ import { readdir } from "node:fs/promises";
 import { join } from "node:path";
 import { marked } from "marked";
 import yaml from "gray-matter";
+import { slugify, formatDate, renderTemplate, formatTag } from "./lib/utils.mjs";
 
 // Shift markdown headings down one level
 const renderer = {
@@ -23,57 +24,13 @@ marked.use({ renderer });
 
 const TEXTOS_DIR = "textos";
 const DIST_DIR = "dist";
+const SITE_URL = "https://equivocadxs.ar";
+const DEFAULT_OG_IMAGE = `${SITE_URL}/images/og-default.svg`;
+
 const TEMPLATE = readFileSync("scripts/texto-template.html", "utf-8");
 const GLOBAL_PLAYER = readFileSync("scripts/global-player.html", "utf-8");
 
 /* ── Helpers ───────────────────────────── */
-
-function slugify(title) {
-  return title
-    .toLowerCase()
-    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-|-$/g, "");
-}
-
-function formatDate(iso) {
-  const d = new Date(iso);
-  return d.toLocaleDateString("es-AR", {
-    year: "numeric", month: "long", day: "numeric",
-  });
-}
-
-function renderTemplate(template, vars) {
-  // Conditional blocks
-  let result = template.replace(
-    /\{\{#(\w+)}}([\s\S]*?)\{\{\/\1}}/g,
-    (_, key, block) => {
-      const val = vars[key];
-      if (val === undefined || val === null || val === false || val === "") {
-        return "";
-      }
-      if (typeof val === "object" && !Array.isArray(val)) {
-        return renderTemplate(block, { ...vars, ...val });
-      }
-      return renderTemplate(block, vars);
-    },
-  );
-
-  // Variable replacement
-  result = result.replace(/\{\{(\w+)}}/g, (_, key) => {
-    const val = vars[key];
-    return val !== undefined && val !== null ? String(val) : "";
-  });
-
-  return result;
-}
-
-function formatTag(tag) {
-  return tag
-    .replace(/-/g, " ")
-    .replace(/\b\w/g, c => c.toUpperCase())
-    .replace(/^(.)/, (_, c) => c.toUpperCase());
-}
 
 function collectValues(items, field) {
   const all = new Set();
@@ -168,6 +125,8 @@ async function main() {
     const ctx = {
       title: fm.title,
       description: fm.description || "",
+      slug,
+      og_image: fm.image || DEFAULT_OG_IMAGE,
       date_iso: fm.date,
       date_display: formatDate(fm.date),
       author: fm.author,
@@ -183,7 +142,7 @@ async function main() {
       content: bodyHtml,
     };
 
-    const html = renderTemplate(TEMPLATE, { ...ctx, GLOBAL_PLAYER });
+    const html = renderTemplate(TEMPLATE, { ...ctx });
 
     const outDir = join(DIST_DIR, "textos", slug);
     mkdirSync(outDir, { recursive: true });
@@ -224,7 +183,6 @@ async function main() {
 
     const html = renderTemplate(TEMPLATE, {
       ...t.ctx,
-      GLOBAL_PLAYER,
       prev: prev ? { slug: prev.slug, title: prev.title } : null,
       next: next ? { slug: next.slug, title: next.title } : null,
     });

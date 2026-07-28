@@ -11,6 +11,7 @@ import { readdir } from "node:fs/promises";
 import { join } from "node:path";
 import { marked } from "marked";
 import yaml from "gray-matter";
+import { slugify, formatDate, renderTemplate, formatTag } from "./lib/utils.mjs";
 
 // Shift markdown headings down one level (h1→h2, h2→h3, etc.)
 // so the page <h1> is the episode title from frontmatter.
@@ -24,49 +25,10 @@ marked.use({ renderer });
 
 const EPISODIOS_DIR = "episodios";
 const DIST_DIR = "dist";
+const SITE_URL = "https://equivocadxs.ar";
+const DEFAULT_OG_IMAGE = `${SITE_URL}/images/og-default.svg`;
+
 const TEMPLATE = readFileSync("scripts/episode-template.html", "utf-8");
-
-/* ── Helpers ───────────────────────────── */
-
-function slugify(title) {
-  return title
-    .toLowerCase()
-    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-|-$/g, "");
-}
-
-function formatDate(iso) {
-  const d = new Date(iso);
-  return d.toLocaleDateString("es-AR", {
-    year: "numeric", month: "long", day: "numeric",
-  });
-}
-
-function renderTemplate(template, vars) {
-  // Conditional blocks: {{#key}}...{{/key}}
-  let result = template.replace(
-    /\{\{#(\w+)}}([\s\S]*?)\{\{\/\1}}/g,
-    (_, key, block) => {
-      const val = vars[key];
-      if (val === undefined || val === null || val === false || val === "") {
-        return "";
-      }
-      if (typeof val === "object" && !Array.isArray(val)) {
-        return renderTemplate(block, { ...vars, ...val });
-      }
-      return renderTemplate(block, vars);
-    },
-  );
-
-  // Variable replacement
-  result = result.replace(/\{\{(\w+)}}/g, (_, key) => {
-    const val = vars[key];
-    return val !== undefined && val !== null ? String(val) : "";
-  });
-
-  return result;
-}
 
 function parseYouTubeId(url) {
   if (!url) return null;
@@ -174,6 +136,10 @@ async function main() {
     const ctx = {
       title: fm.title,
       description: fm.description,
+      slug,
+      og_image: fm.image
+        ? `${SITE_URL}${fm.image.startsWith("/") ? "" : "/"}${fm.image}`
+        : DEFAULT_OG_IMAGE,
       date_iso: fm.date,
       date_display: formatDate(fm.date),
       authors,
@@ -281,14 +247,6 @@ async function main() {
 }
 
 /* ── Helpers ─────────────────────────────── */
-
-function formatTag(tag) {
-  // Convert slug to display: "realismo-magico" → "Realismo mágico"
-  return tag
-    .replace(/-/g, " ")
-    .replace(/\b\w/g, c => c.toUpperCase())
-    .replace(/^(.)/, (_, c) => c.toUpperCase());
-}
 
 function collectTags(episodes) {
   const all = new Set();

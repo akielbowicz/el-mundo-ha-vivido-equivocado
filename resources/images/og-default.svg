@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <rect width="1200" height="630" fill="#faf9f6"/>
+  <rect x="0" y="0" width="1200" height="6" fill="#8b3a3a"/>
+  <text x="600" y="280" font-family="Georgia, serif" font-size="64" fill="#1a1a1a" text-anchor="middle">El mundo ha vivido</text>
+  <text x="600" y="360" font-family="Georgia, serif" font-size="64" fill="#8b3a3a" text-anchor="middle">equivocado</text>
+  <text x="600" y="420" font-family="system-ui, sans-serif" font-size="24" fill="#555" text-anchor="middle">Un programa de radio sobre cuentos y lectura</text>
+  <rect x="0" y="624" width="1200" height="6" fill="#8b3a3a"/>
+</svg>
