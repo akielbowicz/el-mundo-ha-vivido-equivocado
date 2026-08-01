@@ -3,6 +3,7 @@ node_modules/
 dist/
 *.epub
 materiales/raw/
+separated/
 
 # Beads / Dolt files (added by bd init)
 .dolt/

@@ -1,0 +1,103 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# separate-vocals
+# Separa vocales e instrumentales de un archivo de audio usando Demucs.
+#
+# Uso:  ./separate-vocals <input> [nombre]
+#       Si no se pasa nombre, usa el nombre del archivo de entrada.
+#
+# Instala Demucs automáticamente con uv y guarda los resultados en materiales/raw/.
+
+SCRIPT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+OUTDIR="${OUTDIR:-$SCRIPT_DIR/materiales/raw}"
+
+usage() {
+  cat >&2 <<EOF
+Uso: $(basename "$0") <input> [nombre]
+
+Separa vocales e instrumentales de un archivo de audio usando Demucs.
+
+Argumentos:
+  input     Archivo de audio de entrada (.mp3, .wav, etc.)
+  nombre    Nombre base para los archivos de salida
+            Por defecto: nombre del archivo de entrada (sin extensión)
+
+Requiere: uv (para instalar Demucs automáticamente)
+
+Los archivos se guardan en: $OUTDIR/
+EOF
+  exit 1
+}
+
+# --- Help flag ---
+if [ "$#" -lt 1 ] || [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
+  usage
+fi
+
+INPUT="$1"
+CUSTOM="${2:-}"
+
+# --- Validate input file ---
+[ -f "$INPUT" ] || { echo "  ✗ No existe: $INPUT" >&2; exit 1; }
+
+# --- Output directory ---
+mkdir -p "$OUTDIR"
+if ! touch "$OUTDIR/.write-test" 2>/dev/null; then
+  echo "  ✗ No se puede escribir en $OUTDIR" >&2
+  exit 1
+fi
+rm -f "$OUTDIR/.write-test"
+
+# --- Determine output basename ---
+sanitize() {
+  local s
+  s=$(echo "$1" | sed 's/[<>:"/\\|?*]/_/g; s/  */ /g; s/^[[:space:]]*//; s/[[:space:]]*$//')
+  echo "${s:0:80}"
+}
+
+if [ -n "$CUSTOM" ]; then
+  BASE_NAME=$(sanitize "$CUSTOM")
+else
+  BASE=$(basename "$INPUT")
+  BASE_NAME=$(sanitize "${BASE%.*}")
+fi
+
+echo "" >&2
+echo "  Separando voces de: $INPUT" >&2
+echo "  Guardando en: $OUTDIR/" >&2
+echo "" >&2
+
+# --- Run Demucs (installs via uv if needed) ---
+# Output goes to separated/htdemucs/<input_basename>/
+uv run --with demucs --with numpy \
+  demucs --two-stems=vocals "$INPUT" >&2
+
+# --- Locate Demucs output ---
+INPUT_BASENAME=$(basename "$INPUT")
+INPUT_BASENAME="${INPUT_BASENAME%.*}"
+DEMUCS_DIR="$SCRIPT_DIR/separated/htdemucs/$INPUT_BASENAME"
+
+if [ ! -d "$DEMUCS_DIR" ]; then
+  echo "  ✗ No se encontró el directorio de salida de Demucs: $DEMUCS_DIR" >&2
+  exit 1
+fi
+
+# --- Move results to OUTDIR with clear naming ---
+for stem in vocals no_vocals; do
+  src="$DEMUCS_DIR/$stem.wav"
+  dst="$OUTDIR/${BASE_NAME}_${stem}.wav"
+  if [ -f "$src" ]; then
+    mv "$src" "$dst"
+    echo "  ✓ $(basename "$dst")" >&2
+  else
+    echo "  ⚠  No se encontró: $src" >&2
+  fi
+done
+
+# --- Clean up Demucs temp dir ---
+rm -rf "$DEMUCS_DIR"
+
+echo "" >&2
+echo "  ✓ Listo." >&2
+echo "" >&2
