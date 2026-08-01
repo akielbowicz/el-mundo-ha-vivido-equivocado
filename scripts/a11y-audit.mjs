@@ -16,7 +16,7 @@ import { execSync } from "node:child_process";
 
 try {
   const out = execSync(
-    "npx html-validate --config .htmlvalidate.json dist/index.html",
+    "npx html-validate --config .htmlvalidate.json dist/",
     { encoding: "utf-8" },
   );
   console.log("  ✅ No accessibility issues found via html-validate.");

@@ -53,6 +53,19 @@ function renderResults(results, el, index) {
 
 /* ── Filter chips ────────────────────────── */
 
+function groupByFilterType(chips) {
+  // Partition chips by data-filter (tags, author, genre)
+  // Episode chips have no data-filter — treat as "tags"
+  const groups = {};
+  eachLoop(chips.length, i => {
+    const c = chips[i];
+    const filterType = c.dataset.filter || "tags";
+    if (!groups[filterType]) groups[filterType] = [];
+    groups[filterType].push(c);
+  });
+  return groups;
+}
+
 function getActiveTags(chips) {
   const tags = new Set();
   eachLoop(chips.length, i => {
@@ -63,6 +76,7 @@ function getActiveTags(chips) {
 }
 
 function updateFilterEmptyState(container, emptyEl) {
+  if (!container || !emptyEl) return;
   const items = container.querySelectorAll("li");
   let visible = 0;
   eachLoop(items.length, i => {
@@ -72,40 +86,87 @@ function updateFilterEmptyState(container, emptyEl) {
 }
 
 function applyFilter(chips, container, emptyEl) {
-  const active = getActiveTags(chips);
+  if (!container) return;
+  const groups = groupByFilterType(chips);
   const items = container.querySelectorAll("li");
-  if (active.size === 0) {
-    eachLoop(items.length, i => { items[i].style.display = ""; });
-  } else {
-    eachLoop(items.length, i => {
-      const li = items[i];
-      const itemTags = new Set(li.dataset.tags.split(" "));
-      let ok = true;
-      for (const t of active) { if (!itemTags.has(t)) { ok = false; break; } }
-      li.style.display = ok ? "" : "none";
-    });
-  }
+
+  eachLoop(items.length, i => {
+    const li = items[i];
+    let ok = true;
+
+    // Apply tag filter (data-tags)
+    if (groups.tags) {
+      const activeTags = groups.tags.filter(c => c.ariaPressed).map(c => c.dataset.value);
+      if (activeTags.length > 0) {
+        const itemTags = new Set((li.dataset.tags || "").split(" ").filter(Boolean));
+        for (const t of activeTags) { if (!itemTags.has(t)) { ok = false; break; } }
+      }
+    }
+
+    // Apply author filter (data-author)
+    if (ok && groups.author) {
+      const activeAuthors = groups.author.filter(c => c.ariaPressed).map(c => c.dataset.value);
+      if (activeAuthors.length > 0) {
+        const itemAuthor = li.dataset.author || "";
+        if (!activeAuthors.includes(itemAuthor)) ok = false;
+      }
+    }
+
+    // Apply genre filter (data-genre)
+    if (ok && groups.genre) {
+      const activeGenres = groups.genre.filter(c => c.ariaPressed).map(c => c.dataset.value);
+      if (activeGenres.length > 0) {
+        const itemGenre = li.dataset.genre || "";
+        if (!activeGenres.includes(itemGenre)) ok = false;
+      }
+    }
+
+    li.style.display = ok ? "" : "none";
+  });
+
   updateFilterEmptyState(container, emptyEl);
 }
 
 function toggleChip(chip, chips, container, emptyEl) {
-  const tag = chip.dataset.value;
-  if (tag === "all") {
+  if (!container) return;
+  const value = chip.dataset.value;
+  const filterType = chip.dataset.filter || "tags";
+
+  if (value === "all") {
+    // Deactivate all chips of the same filter type, activate "all"
     eachLoop(chips.length, i => {
       const b = chips[i];
-      const bt = b.dataset.value;
-      b.ariaPressed = bt === "all";
-      if (bt === "all") b.classList.add("chip-active"); else b.classList.remove("chip-active");
+      const sameType = (b.dataset.filter || "tags") === filterType;
+      if (sameType) {
+        b.ariaPressed = b.dataset.value === "all";
+        if (b.dataset.value === "all") b.classList.add("chip-active"); else b.classList.remove("chip-active");
+      }
     });
   } else {
     const newp = !chip.ariaPressed;
     chip.ariaPressed = newp;
     if (newp) chip.classList.add("chip-active"); else chip.classList.remove("chip-active");
-    const active = getActiveTags(chips);
-    if (active.size === 0) {
+
+    // Deactivate "all" chip of same type when a specific chip is active
+    eachLoop(chips.length, i => {
+      const b = chips[i];
+      if ((b.dataset.filter || "tags") === filterType && b.dataset.value === "all") {
+        b.ariaPressed = false;
+        b.classList.remove("chip-active");
+      }
+    });
+
+    // If no chips of this type are active, reactivate "all"
+    const anyActive = Array.from(chips).some(
+      b => (b.dataset.filter || "tags") === filterType && b.dataset.value !== "all" && b.ariaPressed
+    );
+    if (!anyActive) {
       eachLoop(chips.length, i => {
         const b = chips[i];
-        if (b.dataset.value === "all") { b.ariaPressed = true; b.classList.add("chip-active"); }
+        if ((b.dataset.filter || "tags") === filterType && b.dataset.value === "all") {
+          b.ariaPressed = true;
+          b.classList.add("chip-active");
+        }
       });
     }
   }
@@ -113,6 +174,7 @@ function toggleChip(chip, chips, container, emptyEl) {
 }
 
 function clearFilters(chips, container, emptyEl) {
+  if (!container) return;
   eachLoop(chips.length, i => {
     const b = chips[i];
     const bt = b.dataset.value;
@@ -126,13 +188,14 @@ function initFilters() {
   const chips = document.querySelectorAll(".filter-chips .chip");
   const container = document.querySelector("[data-filter-container]");
   const emptyEl = document.querySelector("[data-filter-empty]");
-  const clearBtn = document.querySelector("#clear-filters");
-  if (chips && container && chips.length > 0) {
-    eachLoop(chips.length, i => {
-      chips[i].addEventListener("click", () => toggleChip(chips[i], chips, container, emptyEl));
-    });
-  }
-  if (clearBtn) clearBtn.addEventListener("click", () => clearFilters(chips, container, emptyEl));
+  const clearBtns = document.querySelectorAll("#clear-filters");
+  if (!chips || chips.length === 0 || !container) return;
+  eachLoop(chips.length, i => {
+    chips[i].addEventListener("click", () => toggleChip(chips[i], chips, container, emptyEl));
+  });
+  eachLoop(clearBtns.length, i => {
+    clearBtns[i].addEventListener("click", () => clearFilters(chips, container, emptyEl));
+  });
 }
 
 function init(index) {

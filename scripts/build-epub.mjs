@@ -13,6 +13,7 @@ import { join, resolve } from "node:path";
 import { marked } from "marked";
 import yaml from "gray-matter";
 import Epub from "epub-gen";
+import { slugify } from "./lib/utils.mjs";
 
 const TEXTOS_DIR = "textos";
 const DIST_DIR = "dist";
@@ -35,16 +36,6 @@ const EPUB_CSS = `
   img { max-width: 100%; height: auto; margin: 1em 0; }
   .epub-meta { font-size: 0.9em; color: #666; margin-bottom: 1.5em; }
 `;
-
-/* ── Helpers ───────────────────────────── */
-
-function slugify(title) {
-  return title
-    .toLowerCase()
-    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-|-$/g, "");
-}
 
 /* ── Main ──────────────────────────────── */
 
