@@ -1,0 +1,72 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# download-audio
+# Descarga el mejor audio de un video de YouTube como WAV (lossless).
+#
+# Uso:  ./download-audio <url> [nombre]
+#       Si no se pasa nombre, usa el título del video.
+
+SCRIPT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+OUTDIR="${OUTDIR:-$SCRIPT_DIR/materiales/raw}"
+
+usage() {
+  cat >&2 <<EOF
+Uso: $(basename "$0") <url> [nombre]
+
+Descarga el audio de un video de YouTube como WAV (lossless).
+
+Argumentos:
+  url       URL del video de YouTube
+  nombre    Nombre del archivo de salida (sin extensión)
+            Por defecto: título del video
+
+El archivo se guarda en: $OUTDIR
+EOF
+  exit 1
+}
+
+# --- Help flag ---
+if [ "$#" -eq 0 ] || [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
+  usage
+fi
+
+URL="$1"
+NAME="${2:-}"
+
+# --- Output directory ---
+mkdir -p "$OUTDIR"
+if ! touch "$OUTDIR/.write-test" 2>/dev/null; then
+  echo "  ✗ No se puede escribir en $OUTDIR" >&2
+  exit 1
+fi
+rm -f "$OUTDIR/.write-test"
+
+# --- Sanitize NAME (evita espacios/raros en el filename) ---
+sanitize() {
+  echo "$1" | sed 's/[<>:"/\\|?*]/_/g; s/  */ /g; s/^[[:space:]]*//; s/[[:space:]]*$//'
+}
+
+if [ -n "$NAME" ]; then
+  NAME_SANITIZED=$(sanitize "$NAME")
+  OUTPUT_TEMPLATE="$OUTDIR/$NAME_SANITIZED.%(ext)s"
+else
+  OUTPUT_TEMPLATE="$OUTDIR/%(title)s.%(ext)s"
+fi
+
+echo "" >&2
+echo "  Descargando audio de: $URL" >&2
+echo "  Guardando en: $OUTDIR/" >&2
+echo "" >&2
+
+yt-dlp --js-runtimes node \
+       --no-warnings \
+       -x \
+       --audio-format wav \
+       --audio-quality 0 \
+       -o "$OUTPUT_TEMPLATE" \
+       "$URL" >&2
+
+echo "" >&2
+echo "  ✓ Listo." >&2
+echo "" >&2

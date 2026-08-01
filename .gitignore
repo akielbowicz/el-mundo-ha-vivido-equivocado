@@ -2,6 +2,7 @@ node_modules/
 .squint-cache/
 dist/
 *.epub
+materiales/raw/
 
 # Beads / Dolt files (added by bd init)
 .dolt/

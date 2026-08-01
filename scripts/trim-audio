@@ -1,0 +1,120 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# trim-audio
+# Corta un segmento de un archivo de audio y lo exporta como MP3 (V0).
+#
+# Uso:  ./trim-audio <input> <inicio> <fin> [nombre]
+#       Tiempos: SS, MM:SS, o HH:MM:SS
+
+SCRIPT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+OUTDIR="${OUTDIR:-$SCRIPT_DIR/materiales/raw}"
+
+usage() {
+  cat >&2 <<EOF
+Uso: $(basename "$0") <input> <inicio> <fin> [nombre]
+
+Corta un segmento de audio y lo exporta como MP3 (V0).
+
+Argumentos:
+  input     Archivo de audio de entrada (.wav, .mp3, etc.)
+  inicio    Timestamp de inicio (ej: 40:30)
+  fin       Timestamp de fin    (ej: 41:20)
+  nombre    Nombre del archivo de salida (sin extensión)
+            Por defecto: <input>_<inicio>-<fin>.mp3
+
+Tiempos aceptados: SS, MM:SS, o HH:MM:SS
+
+El archivo se guarda en: $OUTDIR
+EOF
+  exit 1
+}
+
+# --- Help flag ---
+if [ "$#" -lt 3 ] || [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
+  usage
+fi
+
+INPUT="$1"
+START="$2"
+END="$3"
+CUSTOM="${4:-}"
+
+# --- Validate input file ---
+[ -f "$INPUT" ] || { echo "  ✗ No existe: $INPUT" >&2; exit 1; }
+
+# --- Output directory ---
+mkdir -p "$OUTDIR"
+if ! touch "$OUTDIR/.write-test" 2>/dev/null; then
+  echo "  ✗ No se puede escribir en $OUTDIR" >&2
+  exit 1
+fi
+rm -f "$OUTDIR/.write-test"
+
+# --- Convert timestamp to seconds ---
+to_seconds() {
+  local t="$1"
+  if [[ $t =~ ^([0-9]+):([0-9]{2}):([0-9]{2})(\.[0-9]+)?$ ]]; then
+    awk "BEGIN { printf \"%.3f\", ${BASH_REMATCH[1]}*3600 + ${BASH_REMATCH[2]}*60 + ${BASH_REMATCH[3]}${BASH_REMATCH[4]:+0} }"
+  elif [[ $t =~ ^([0-9]+):([0-9]{2})(\.[0-9]+)?$ ]]; then
+    awk "BEGIN { printf \"%.3f\", ${BASH_REMATCH[1]}*60 + ${BASH_REMATCH[2]} }"
+  elif [[ $t =~ ^[0-9]+(\.[0-9]+)?$ ]]; then
+    echo "$t"
+  else
+    echo "0"
+  fi
+}
+
+# --- Validate START < END ---
+START_SEC=$(to_seconds "$START")
+END_SEC=$(to_seconds "$END")
+
+if [ "$(echo "$START_SEC > $END_SEC" | bc 2>/dev/null || echo 1)" -eq 1 ]; then
+  echo "  ✗ El inicio ($START) es mayor que el fin ($END)" >&2
+  exit 1
+fi
+
+# --- Warn if timestamps may exceed audio duration ---
+DURATION=$(ffprobe -v error -show_entries format=duration -of csv=p=0 "$INPUT" 2>/dev/null || echo "0")
+if [ -n "$DURATION" ] && [ "$DURATION" != "0" ] && [ "$(echo "$END_SEC > $DURATION" | bc 2>/dev/null || echo 0)" -eq 1 ]; then
+  echo "  ⚠  El fin ($END) supera la duración del audio ($(printf "%.0f" "$DURATION")s). Se cortará hasta el final." >&2
+fi
+
+# --- Sanitize filename ---
+sanitize() {
+  local s
+  s=$(echo "$1" | sed 's/[<>:"/\\|?*]/_/g; s/  */ /g; s/^[[:space:]]*//; s/[[:space:]]*$//')
+  # Cap at 80 chars to avoid filesystem limits
+  echo "${s:0:80}"
+}
+
+if [ -n "$CUSTOM" ]; then
+    OUTPUT="$OUTDIR/$(sanitize "$CUSTOM").mp3"
+else
+    BASE=$(basename "$INPUT")
+    BASE="${BASE%.*}"
+    LABEL=$(echo "${START}-${END}" | sed 's/[:.]/-/g')
+    OUTPUT="$OUTDIR/$(sanitize "$BASE")_${LABEL}.mp3"
+fi
+
+echo "" >&2
+echo "  Cortando:  $INPUT" >&2
+echo "  Desde:     $START" >&2
+echo "  Hasta:     $END" >&2
+echo "  Salida:    $OUTPUT" >&2
+echo "" >&2
+
+# -ss after -i for frame-accurate cut (decodes from start, writes from -ss)
+ffmpeg -y \
+       -i "$INPUT" \
+       -ss "$START" \
+       -to "$END" \
+       -c:a libmp3lame \
+       -q:a 0 \
+       "$OUTPUT" >&2
+
+# Report output duration
+CLIP_DUR=$(ffprobe -v error -show_entries format=duration -of csv=p=0 "$OUTPUT" 2>/dev/null || echo "?")
+echo "" >&2
+echo "  ✓ Listo: $(basename "$OUTPUT") ($(printf "%.1f" "$CLIP_DUR")s)" >&2
+echo "" >&2
