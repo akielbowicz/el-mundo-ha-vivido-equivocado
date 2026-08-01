@@ -4,38 +4,50 @@ set -euo pipefail
 # separate-vocals
 # Separa vocales e instrumentales de un archivo de audio usando Demucs.
 #
-# Uso:  ./separate-vocals <input> [nombre]
-#       Si no se pasa nombre, usa el nombre del archivo de entrada.
+# Uso:  ./separate-vocals [-n modelo] <input> [nombre]
 #
-# Instala Demucs automáticamente con uv y guarda los resultados en materiales/raw/.
+# Instala Demucs automáticamente (una sola vez con uv tool) y guarda
+# los resultados como WAV (16-bit) en materiales/raw/.
 
 SCRIPT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 OUTDIR="${OUTDIR:-$SCRIPT_DIR/materiales/raw}"
 
 usage() {
   cat >&2 <<EOF
-Uso: $(basename "$0") <input> [nombre]
+Uso: $(basename "$0") [-n modelo] <input> [nombre]
 
 Separa vocales e instrumentales de un archivo de audio usando Demucs.
+El resultado son dos archivos WAV (16-bit, 44.1 kHz estéreo).
 
 Argumentos:
-  input     Archivo de audio de entrada (.mp3, .wav, etc.)
+  input     Archivo de audio de entrada (.mp3, .wav, .flac, etc.)
   nombre    Nombre base para los archivos de salida
             Por defecto: nombre del archivo de entrada (sin extensión)
 
-Requiere: uv (para instalar Demucs automáticamente)
+Opciones:
+  -n, --model <modelo>  Modelo de Demucs a usar (por defecto: htdemucs)
+                        Otros: htdemucs_ft, mdx_extra_q, mdx_q, mdx_extra
+
+Requiere: uv (instala Demucs automáticamente la primera vez)
 
 Los archivos se guardan en: $OUTDIR/
 EOF
-  exit 1
+  exit 0
 }
 
-# --- Help flag ---
-if [ "$#" -lt 1 ] || [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
-  usage
-fi
+# --- Option parsing ---
+MODEL="htdemucs"
 
-INPUT="$1"
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    -n|--model) MODEL="${2:?Falta nombre del modelo}"; shift 2 ;;
+    --help|-h) usage ;;
+    -*) echo "  ✗ Opción desconocida: $1" >&2; usage ;;
+    *) break ;;
+  esac
+done
+
+INPUT="${1:?Falta archivo de entrada}"
 CUSTOM="${2:-}"
 
 # --- Validate input file ---
@@ -65,18 +77,25 @@ fi
 
 echo "" >&2
 echo "  Separando voces de: $INPUT" >&2
+echo "  Modelo: $MODEL" >&2
 echo "  Guardando en: $OUTDIR/" >&2
 echo "" >&2
 
-# --- Run Demucs (installs via uv if needed) ---
-# Output goes to separated/htdemucs/<input_basename>/
-uv run --with demucs --with numpy \
-  demucs --two-stems=vocals "$INPUT" >&2
+# --- Ensure demucs is installed (persistent via uv tool) ---
+if ! command -v demucs &>/dev/null; then
+  echo "  Instalando Demucs (primera vez)..." >&2
+  uv tool install demucs --with numpy >&2
+  echo "" >&2
+fi
 
-# --- Locate Demucs output ---
+# --- Run Demucs (cd to SCRIPT_DIR so output lands in project root) ---
+cd "$SCRIPT_DIR"
+demucs --two-stems=vocals -n "$MODEL" "$INPUT" >&2
+
+# --- Locate Demucs output (model dir mirrors -n flag) ---
 INPUT_BASENAME=$(basename "$INPUT")
 INPUT_BASENAME="${INPUT_BASENAME%.*}"
-DEMUCS_DIR="$SCRIPT_DIR/separated/htdemucs/$INPUT_BASENAME"
+DEMUCS_DIR="$SCRIPT_DIR/separated/$MODEL/$INPUT_BASENAME"
 
 if [ ! -d "$DEMUCS_DIR" ]; then
   echo "  ✗ No se encontró el directorio de salida de Demucs: $DEMUCS_DIR" >&2
@@ -90,6 +109,7 @@ for stem in vocals no_vocals; do
   if [ -f "$src" ]; then
     mv "$src" "$dst"
     echo "  ✓ $(basename "$dst")" >&2
+    echo "$dst"  # stdout: machine-parseable path
   else
     echo "  ⚠  No se encontró: $src" >&2
   fi
@@ -98,6 +118,12 @@ done
 # --- Clean up Demucs temp dir ---
 rm -rf "$DEMUCS_DIR"
 
-echo "" >&2
-echo "  ✓ Listo." >&2
+# --- Report output duration (from first stem) ---
+FIRST_OUT="$OUTDIR/${BASE_NAME}_vocals.wav"
+if [ -f "$FIRST_OUT" ]; then
+  DUR=$(ffprobe -v error -show_entries format=duration -of csv=p=0 "$FIRST_OUT" 2>/dev/null || echo "?")
+  echo "" >&2
+  echo "  ✓ Listo. Duración: $(printf "%.1f" "$DUR")s" >&2
+fi
+
 echo "" >&2
