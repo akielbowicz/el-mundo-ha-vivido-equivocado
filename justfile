@@ -13,7 +13,7 @@ bundle-js: install dist
 	cp .squint-cache/index.html .squint-cache/404.html .squint-cache/style.css dist/ 2>/dev/null || true
 	cp -r .squint-cache/images dist/ 2>/dev/null || true
 
-build: bundle-js
+build: bundle-js clean-org-pages
     node scripts/build-episodes.mjs
     node scripts/build-textos.mjs
     node scripts/build-epub.mjs
@@ -23,11 +23,9 @@ build: bundle-js
     node scripts/build-sitemap.mjs
     # Copy referenced materials assets
     cp -r materiales/raw dist/materiales/ 2>/dev/null || true
-    # Clean up stale flat files that were moved to directory indexes
-    rm -f dist/paginas/*.html
 
 serve: install build
-    serve dist -p 8080 --no-clipboard
+    npx serve dist -p 8080 --no-clipboard
 
 watch: install
 	npx squint watch &
@@ -64,6 +62,10 @@ check-tests:
 # Create a new episode from interactive prompts
 new-episode:
     node scripts/new-episode.mjs
+
+# Remove stale org-generated pages before rebuild
+clean-org-pages:
+    rm -rf dist/paginas/ dist/programa/
 
 clean:
     rm -rf dist node_modules
