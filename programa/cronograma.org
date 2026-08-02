@@ -6,13 +6,13 @@ Cronograma tentativo de la primera temporada. Las fechas y los cuentos pueden aj
 
 | #  | Fecha       | Cuento               |
 |----+-------------+----------------------|
-|  1 | 2026-08-06  | El Aleph             |
-|  2 | 2026-08-13  | La noche boca arriba |
-|  3 | 2026-08-20  | El Sur               |
-|  4 | 2026-08-27  | Casa tomada          |
-|  5 | 2026-09-03  | Axolotl              |
-|  6 | 2026-09-10  | El impostor Tom Castro |
-|  7 | 2026-09-17  | Continuidad de los parques |
+|  1 | 2026-08-06  |              |
+|  2 | 2026-08-13  |  |
+|  3 | 2026-08-20  |                |
+|  4 | 2026-08-27  |           |
+|  5 | 2026-09-03  |              |
+|  6 | 2026-09-10  |  |
+|  7 | 2026-09-17  |  |
 |  8 | 2026-09-24  | (por anunciar)       |
 |  9 | 2026-10-01  | (por anunciar)       |
 | 10 | 2026-10-08  | (por anunciar)       |
