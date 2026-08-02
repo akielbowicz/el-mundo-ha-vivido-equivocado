@@ -33,6 +33,15 @@ function walk(dir, files = []) {
 
 /* ── Determine if a page is a redirect stub ── */
 
+/* ── Skip pages with underscore-prefixed segments (local-only) ── */
+
+function hasUnderscoreSegment(filePath) {
+  // Check if any path segment starts with _
+  return filePath.split(/[/\\]/).some(seg => seg.startsWith("_"));
+}
+
+/* ── Determine if a page is a redirect stub ── */
+
 function isRedirectStub(filePath) {
   try {
     const content = readFileSync(filePath, "utf-8");
@@ -89,7 +98,7 @@ function escapeXml(s) {
 
 function main() {
   const allFiles = walk(DIST);
-  const pages = allFiles.filter(f => !isRedirectStub(f));
+  const pages = allFiles.filter(f => !isRedirectStub(f) && !hasUnderscoreSegment(f));
 
   if (pages.length === 0) {
     console.log("  No pages found for sitemap");

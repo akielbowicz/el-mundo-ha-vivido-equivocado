@@ -121,7 +121,6 @@ async function main() {
 
   const topRedirects = [
     { from: "sobre", to: "/paginas/sobre/" },
-    { from: "contacto", to: "/paginas/contacto/" },
   ];
   for (const { from, to } of topRedirects) {
     const redirectDir = join(DIST_DIR, from);
