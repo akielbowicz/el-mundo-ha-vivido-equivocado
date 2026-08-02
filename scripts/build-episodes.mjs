@@ -351,6 +351,8 @@ function generateIndex(episodes) {
   </footer>
 
   ${GLOBAL_PLAYER}
+  <script type="module" src="/search.mjs"></script>
+  <script type="module" src="/core.js"></script>
 </body>
 </html>`;
 }

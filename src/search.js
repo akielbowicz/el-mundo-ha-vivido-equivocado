@@ -10,13 +10,67 @@ function escapeHtml(s) {
   return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;");
 }
 
+/** Normalise text: lowercase + strip diacritics for accent-insensitive matching */
+function norm(s) {
+  return String(s)
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+}
+
+/* ── Scoring ────────────────────────────── */
+
+/** Weight per field — title match is strongest */
+const FIELD_WEIGHTS = { title: 4, tags: 3, authors: 2, description: 1 };
+
+/** Score an episode against a query by token-level matching.
+ *  Returns { score, matchedFields } — higher is better. */
+function scoreEp(ep, queryTokens) {
+  const fields = {
+    title: norm(ep.title || ""),
+    tags: norm((ep.tags || []).join(" ")),
+    authors: norm(ep.authors || ""),
+    description: norm(ep.description || ""),
+  };
+  let totalScore = 0;
+  const matchedFields = [];
+  for (const [field, text] of Object.entries(fields)) {
+    const w = FIELD_WEIGHTS[field] || 1;
+    let fieldScore = 0;
+    for (const tok of queryTokens) {
+      if (text.includes(tok)) fieldScore += w;
+    }
+    if (fieldScore > 0) matchedFields.push(field);
+    totalScore += fieldScore;
+  }
+  return { score: totalScore, matchedFields };
+}
+
+/** Find the best contextual suggestions when no results match.
+ *  Returns up to 3 episodes sorted by partial-token overlap. */
+function contextualSuggestions(queryTokens, index) {
+  const scored = index
+    .map(ep => {
+      const s = scoreEp(ep, queryTokens);
+      return { ep, score: s.score };
+    })
+    .filter(x => x.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 3);
+  return scored.map(x => x.ep);
+}
+
 /* ── Render search results ──────────────── */
 
-function renderResults(results, el, index) {
+const MAX_RESULTS = 10;
+
+function renderResults(results, el, index, queryTokens) {
   el.innerHTML = "";
-  if (results.length) {
-    eachLoop(results.length, j => {
-      const ep = results[j];
+  if (results.length > 0) {
+    const capped = results.length > MAX_RESULTS;
+    const shown = capped ? results.slice(0, MAX_RESULTS) : results;
+    eachLoop(shown.length, j => {
+      const ep = shown[j];
       const li = document.createElement("li");
       const a = document.createElement("a");
       const sm = document.createElement("small");
@@ -28,17 +82,26 @@ function renderResults(results, el, index) {
       li.appendChild(sm);
       el.appendChild(li);
     });
+    if (capped) {
+      const note = document.createElement("li");
+      note.className = "search-more";
+      note.textContent = `Mostrando ${MAX_RESULTS} de ${results.length} resultados`;
+      el.appendChild(note);
+    }
   } else {
     const li = document.createElement("li");
     const msg = document.createElement("p");
-    const sug = document.createElement("ul");
     li.role = "option";
-    msg.textContent = "No encontramos episodios con ese término. Probá con:";
+    msg.textContent = "No encontramos contenido con ese término. Probá con:";
     msg.className = "search-empty-msg";
     li.appendChild(msg);
+
+    const sug = document.createElement("ul");
     sug.className = "search-suggestions";
-    eachLoop(Math.min(3, index.length), j => {
-      const ep = index[j];
+    const suggestions = contextualSuggestions(queryTokens, index);
+    const fallback = suggestions.length === 0 ? index.slice(0, 3) : suggestions;
+    eachLoop(Math.min(3, fallback.length), j => {
+      const ep = fallback[j];
       const sli = document.createElement("li");
       const sa = document.createElement("a");
       sa.href = `/episodios/${ep.slug}/`;
@@ -198,23 +261,38 @@ function initFilters() {
   });
 }
 
+/* ── Search init ─────────────────────────── */
+
 function init(index) {
   const input = document.querySelector("#search-input");
   const results = document.querySelector("#search-results");
   if (!input || !results) { console.info("Search UI elements not found — skipping"); return; }
   results.hidden = true;
+
+  let debounceTimer = null;
+
   input.addEventListener("input", e => {
-    const q = e.target.value;
-    if (q.length < 2) { results.hidden = true; return; }
-    const lc = q.toLowerCase();
-    const matches = Array.from(index).filter(ep =>
-      (ep.title || "").toLowerCase().includes(lc) ||
-      (ep.description || "").toLowerCase().includes(lc) ||
-      (ep.authors || "").toLowerCase().includes(lc) ||
-      ((ep.tags || []).join(" ")).toLowerCase().includes(lc)
-    ).slice(0, 10);
-    results.hidden = false;
-    renderResults(matches, results, index);
+    if (debounceTimer) clearTimeout(debounceTimer);
+    const raw = e.target.value.trim();
+    if (raw.length < 2) { results.hidden = true; return; }
+
+    debounceTimer = setTimeout(() => {
+      // Tokenise query: split on whitespace, keep meaningful tokens
+      const queryTokens = raw
+        .toLowerCase()
+        .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+        .split(/\s+/)
+        .filter(t => t.length > 0);
+
+      // Score every episode against the query
+      const scored = Array.from(index)
+        .map(ep => ({ ep, ...scoreEp(ep, queryTokens) }))
+        .filter(x => x.score > 0)
+        .sort((a, b) => b.score - a.score);
+
+      results.hidden = false;
+      renderResults(scored.map(x => x.ep), results, index, queryTokens);
+    }, 150); // 150ms debounce
   });
 }
 
