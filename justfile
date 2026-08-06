@@ -69,7 +69,7 @@ to-mp3 ARGS:
 
 # Remove stale org-generated pages before rebuild
 clean-org-pages:
-    rm -rf dist/paginas/ dist/programa/
+    rm -rf dist/paginas/ dist/programa/ dist/sobre/ dist/contacto/
 
 clean:
     rm -rf dist node_modules
