@@ -63,6 +63,10 @@ check-tests:
 new-episode:
     node scripts/new-episode.mjs
 
+# Convert audio files to MP3 (V0 by default)
+to-mp3 ARGS:
+    ./scripts/to-mp3 {{ARGS}}
+
 # Remove stale org-generated pages before rebuild
 clean-org-pages:
     rm -rf dist/paginas/ dist/programa/

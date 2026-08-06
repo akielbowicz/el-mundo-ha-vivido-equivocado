@@ -1,0 +1,285 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# to-mp3
+# Convierte archivos de audio a MP3 (V0 por defecto).
+# Acepta uno o más archivos, o un directorio (convierte todo).
+#
+# Uso:  ./to-mp3 [opciones] <input>...
+#       ./to-mp3 <directorio>
+
+SCRIPT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+OUTDIR="${OUTDIR:-$SCRIPT_DIR/materiales/raw}"
+
+usage() {
+  cat >&2 <<EOF
+Uso: $(basename "$0") [opciones] <input>...
+
+Convierte archivos de audio a MP3. Acepta archivos individuales o un
+directorio (convierte todos los archivos de audio que encuentre).
+
+El nombre de salida incluye la duración: <nombre>-dur<segundos>.mp3
+Si dos archivos generan el mismo nombre, se agrega un sufijo (-2, -3...).
+
+Opciones:
+  -q, --quality <valor>   Calidad MP3 (0=mejor, 2=buena, 5=media, 9=peor)
+                           Por defecto: 0 (V0, ~245 kbps VBR)
+                           También acepta: 320 (CBR 320k), 256, 192, 128
+  -o, --outdir <dir>      Directorio de salida (o variable OUTDIR)
+                           Por defecto: $OUTDIR
+  --overwrite             Reconvierte todo, ignorando archivos ya convertidos
+  -h, --help              Muestra esta ayuda
+
+Variables de entorno:
+  ARTIST    Nombre del artista (tag ID3, opcional)
+  ALBUM     Nombre del álbum (tag ID3, opcional)
+
+El tag 'title' se obtiene del nombre original del archivo, no del slug.
+
+Argumentos:
+  input       Archivo(s) de audio (.wav, .flac, .m4a, .ogg, .opus, etc.)
+              o un directorio (convierte todo el directorio).
+
+Por defecto solo se reconvierten archivos cuyo origen es más reciente que el
+MP3 de salida. Ideal para procesar directorios de forma incremental.
+
+Ejemplos:
+  ./to-mp3 grabacion.wav                # → grabacion-dur125.mp3 en $OUTDIR
+  ./to-mp3 grabacion.flac -o ~/musica/
+  ./to-mp3 -q 2 grabacion.wav
+  ./to-mp3 -q 320 grabacion.flac
+  ARTIST="Mi Banda" ALBUM="Podcast 2024" ./to-mp3 grabacion.wav
+  ./to-mp3 materiales/raw/               # solo lo nuevo o modificado
+  ./to-mp3 *.wav                          # todos los WAV del directorio actual
+EOF
+  exit 1
+}
+
+# --- Defaults ---
+QUALITY="0"
+OVERWRITE=false
+INPUTS=()
+
+# --- Parse args ---
+while [ $# -gt 0 ]; do
+  case "$1" in
+    -h|--help)
+      usage
+      ;;
+    -q|--quality)
+      [ $# -lt 2 ] && { echo "  ✗ Falta valor para $1" >&2; exit 1; }
+      QUALITY="$2"
+      shift 2
+      ;;
+    -o|--outdir)
+      [ $# -lt 2 ] && { echo "  ✗ Falta valor para $1" >&2; exit 1; }
+      OUTDIR="$2"
+      shift 2
+      ;;
+    --overwrite)
+      OVERWRITE=true
+      shift
+      ;;
+    -*)
+      echo "  ✗ Opción desconocida: $1" >&2
+      usage
+      ;;
+    *)
+      INPUTS+=("$1")
+      shift
+      ;;
+  esac
+done
+
+# --- Validate inputs ---
+if [ ${#INPUTS[@]} -eq 0 ]; then
+  usage
+fi
+
+# --- Expand directories to file list ---
+FILES=()
+for input in "${INPUTS[@]}"; do
+  if [ -d "$input" ]; then
+    # Recursively find audio files in directory
+    # Excluye .mp3 (ya son MP3) para evitar que el script reprocese
+    # sus propios outputs previos (ej: foo-dur3.mp3)
+    while IFS= read -r -d '' f; do
+      FILES+=("$f")
+    done < <(find "$input" -type f \( \
+      -iname '*.wav' -o -iname '*.flac' -o -iname '*.m4a' -o \
+      -iname '*.aac' -o -iname '*.ogg' -o -iname '*.opus' -o \
+      -iname '*.wma' -o -iname '*.aiff' -o -iname '*.aif' -o \
+      -iname '*.alac' \
+    \) -print0)
+  elif [ -f "$input" ]; then
+    FILES+=("$input")
+  else
+    echo "  ✗ No existe: $input" >&2
+    exit 1
+  fi
+done
+
+if [ ${#FILES[@]} -eq 0 ]; then
+  echo "  ✗ No se encontraron archivos de audio para convertir." >&2
+  exit 1
+fi
+
+# --- Validate quality ---
+# Determine if it's VBR (0-9) or CBR (bitrate)
+if [[ "$QUALITY" =~ ^[0-9]$ ]]; then
+  # VBR: q:a 0-9
+  LAME_OPTS="-q:a $QUALITY"
+  if [ "$QUALITY" -eq 0 ]; then
+    QUALITY_LABEL="V0 (~245 kbps VBR)"
+  elif [ "$QUALITY" -eq 2 ]; then
+    QUALITY_LABEL="V2 (~190 kbps VBR)"
+  elif [ "$QUALITY" -eq 5 ]; then
+    QUALITY_LABEL="V5 (~130 kbps VBR)"
+  elif [ "$QUALITY" -eq 9 ]; then
+    QUALITY_LABEL="V9 (~65 kbps VBR)"
+  else
+    QUALITY_LABEL="V${QUALITY}"
+  fi
+elif [[ "$QUALITY" =~ ^[0-9]+$ ]]; then
+  # CBR: b:a bitrate
+  LAME_OPTS="-b:a ${QUALITY}k"
+  QUALITY_LABEL="${QUALITY}k CBR"
+else
+  echo "  ✗ Calidad inválida: $QUALITY (debe ser 0-9 o un bitrate como 320)" >&2
+  exit 1
+fi
+
+# --- Output directory ---
+mkdir -p "$OUTDIR"
+if ! touch "$OUTDIR/.write-test" 2>/dev/null; then
+  echo "  ✗ No se puede escribir en $OUTDIR" >&2
+  exit 1
+fi
+rm -f "$OUTDIR/.write-test"
+
+# --- Slugify filename: lowercase, sin acentos, solo a-z0-9 y guiones ---
+slugify() {
+  local s="$1"
+  # 1. Normalizar acentos y caracteres especiales a ASCII
+  s=$(echo "$s" | iconv -f utf-8 -t ascii//TRANSLIT 2>/dev/null || echo "$s")
+  # 2. Pasar a minúsculas
+  s=$(echo "$s" | tr '[:upper:]' '[:lower:]')
+  # 3. Reemplazar espacios y caracteres no alfanuméricos (excepto guiones) por guiones
+  s=$(echo "$s" | sed 's/[^a-z0-9-]/-/g')
+  # 4. Colapsar guiones múltiples y recortar extremos
+  s=$(echo "$s" | sed 's/--*/-/g; s/^-//; s/-$//')
+  # Cap at 80 chars
+  s="${s:0:80}"
+  # Stem vacío (ej: archivo ".wav") → nombre base por defecto
+  [ -n "$s" ] || s="_"
+  echo "$s"
+}
+
+# --- Convert ---
+echo "" >&2
+echo "  Calidad:   $QUALITY_LABEL" >&2
+echo "  Salida:    $OUTDIR/" >&2
+echo "  Archivos:  ${#FILES[@]}" >&2
+echo "" >&2
+
+TOTAL=${#FILES[@]}
+COUNT=0
+SKIPPED=0
+CONVERTED=0
+FAILED=0
+
+# Outputs ya generados en esta ejecución → detectar colisiones de nombres
+declare -A SEEN
+
+for input in "${FILES[@]}"; do
+  COUNT=$((COUNT + 1))
+
+  BASENAME=$(basename "$input")
+  STEM="${BASENAME%.*}"
+
+  # Duración del audio en segundos → sufijo -durNNN
+  DUR_RAW=$(ffprobe -v error -show_entries format=duration -of csv=p=0 "$input" 2>/dev/null || echo "0")
+  if ! [[ "$DUR_RAW" =~ ^[0-9]+(\.[0-9]+)?$ ]]; then
+    echo "  ⚠  [${COUNT}/${TOTAL}] No se pudo leer la duración de $BASENAME (sufijo -dur000)" >&2
+    DUR_RAW="0"
+  fi
+  DUR_SEC=$(printf "%.0f" "$DUR_RAW" 2>/dev/null || echo "0")
+
+  BASE="$OUTDIR/$(slugify "$STEM")-dur${DUR_SEC}"
+  OUTPUT="$BASE.mp3"
+
+  # Colisión con un archivo ya generado en esta misma ejecución → desambiguar
+  if [ -n "${SEEN[$OUTPUT]:-}" ]; then
+    N=2
+    while [ -n "${SEEN[$BASE-$N.mp3]:-}" ]; do
+      N=$((N + 1))
+    done
+    OUTPUT="$BASE-$N.mp3"
+    echo "  ⚠  [${COUNT}/${TOTAL}] Nombre colisiona con otro archivo → usa $(basename "$OUTPUT")" >&2
+  fi
+  SEEN["$OUTPUT"]="$input"
+
+  # Check if already converted (output existe y es más nuevo que el input)
+  if [ -f "$OUTPUT" ] && [ "$OVERWRITE" = false ]; then
+    if [ "$OUTPUT" -nt "$input" ]; then
+      echo "  [${COUNT}/${TOTAL}] ⏭  $BASENAME → ya convertido (${DUR_SEC}s, --overwrite para reconvertir)" >&2
+      SKIPPED=$((SKIPPED + 1))
+      continue
+    else
+      echo "  [${COUNT}/${TOTAL}] 🔄  $BASENAME → el origen es más reciente, reconvirtiendo..." >&2
+    fi
+  fi
+
+  # If it's already an MP3, just copy (re-encoding would lose quality)
+  EXT="${BASENAME##*.}"
+  if [ "${EXT,,}" = "mp3" ]; then
+    # Stream copy (sin re-encodear) pero reescribiendo el título en los tags
+    TMP_OUTPUT="${OUTPUT%.mp3}.tmp.mp3"
+    if ffmpeg -y -v error \
+        -i "$input" \
+        -c copy \
+        -metadata title="$STEM" \
+        -metadata artist="${ARTIST:-}" \
+        -metadata album="${ALBUM:-}" \
+        "$TMP_OUTPUT"; then
+      mv -f "$TMP_OUTPUT" "$OUTPUT"
+      echo "  [${COUNT}/${TOTAL}] ✓  $BASENAME → $(basename "$OUTPUT") (copiado, ya es MP3, ${DUR_SEC}s)" >&2
+      CONVERTED=$((CONVERTED + 1))
+    else
+      rm -f "$TMP_OUTPUT"
+      echo "  [${COUNT}/${TOTAL}] ✗  Error al copiar $BASENAME" >&2
+      FAILED=$((FAILED + 1))
+    fi
+    continue
+  fi
+
+  echo "  [${COUNT}/${TOTAL}] 🔄  $BASENAME → $(basename "$OUTPUT") ..." >&2
+
+  # Escribir a un temporal y renombrar solo si ffmpeg tuvo éxito
+  # → evita dejar outputs parciales/corruptos en el directorio
+  TMP_OUTPUT="${OUTPUT%.mp3}.tmp.mp3"
+
+  if ffmpeg -y -v error \
+      -i "$input" \
+      -c:a libmp3lame \
+      $LAME_OPTS \
+      -metadata title="$STEM" \
+      -metadata artist="${ARTIST:-}" \
+      -metadata album="${ALBUM:-}" \
+      "$TMP_OUTPUT"; then
+    mv -f "$TMP_OUTPUT" "$OUTPUT"
+    DUR=$(ffprobe -v error -show_entries format=duration -of csv=p=0 "$OUTPUT" 2>/dev/null || echo "$DUR_SEC")
+    DUR_OUT=$(printf "%.0f" "$DUR" 2>/dev/null || echo "$DUR_SEC")
+    SIZE=$(du -h "$OUTPUT" | cut -f1)
+    echo "  [${COUNT}/${TOTAL}] ✓  $(basename "$OUTPUT") (${SIZE}, ${DUR_OUT}s)" >&2
+    CONVERTED=$((CONVERTED + 1))
+  else
+    rm -f "$TMP_OUTPUT"
+    echo "  [${COUNT}/${TOTAL}] ✗  Error al convertir $BASENAME" >&2
+    FAILED=$((FAILED + 1))
+  fi
+done
+
+echo "" >&2
+echo "  ✓ Listo: $CONVERTED convertidos, $SKIPPED omitidos, $FAILED fallidos" >&2
+echo "" >&2
