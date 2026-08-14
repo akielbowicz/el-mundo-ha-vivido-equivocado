@@ -47,8 +47,9 @@ download-stream ARGS:
     ./scripts/download-stream {{ARGS}}
 
 # Publish a recording as a GitHub Release and get a shareable link
-publish-episodio AUDIO:
-    ./scripts/publish-episodio {{AUDIO}}
+# Publish the next unreleased episode from materiales/programas/ to GitHub Releases
+publish-episodio NUM="":
+    ./scripts/publish-episodio {{NUM}}
 
 # Create a new texto from interactive prompts
 new-texto:
