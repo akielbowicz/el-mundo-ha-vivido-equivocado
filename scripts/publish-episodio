@@ -14,50 +14,66 @@ PROG_DIR="$SCRIPT_DIR/materiales/programas"
 
 usage() {
   cat >&2 <<EOF
-Uso: $(basename "$0") [NUMERO]
+Uso: $(basename "$0") [--update] [NUMERO]
 
 Publica un episodio de materiales/programas/ en GitHub Releases.
 
 Argumentos:
-  NUMERO    Nro de episodio (ej: 001). Por defecto: el próximo sin publicar.
+  --update    Sobreescribe el asset de un release existente (versión editada)
+  NUMERO      Nro de episodio (ej: 001). Por defecto: el próximo sin publicar.
 
 Ejemplos:
-  ./scripts/publish-episodio        # próximo sin publicar
-  ./scripts/publish-episodio 002    # episodio específico
+  ./scripts/publish-episodio              # próximo sin publicar
+  ./scripts/publish-episodio 002          # episodio específico
+  ./scripts/publish-episodio --update 001 # re-publica con versión editada
 EOF
   exit 0
 }
 
-# --- Help ---
-[ "$#" -gt 0 ] && { [ "$1" = "--help" ] || [ "$1" = "-h" ]; } && usage
+# --- Args ---
+UPDATE=0
+NUM=""
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --update|-u) UPDATE=1; shift ;;
+    --help|-h)   usage ;;
+    *)           NUM="$1"; shift ;;
+  esac
+done
 
 # --- List releases existentes ---
 echo "" >&2
 echo "  Escaneando releases existentes..." >&2
 RELEASED=$(gh release list --repo "$REPO" --limit 100 --json tagName --jq '.[].tagName' 2>/dev/null || true)
 
-# --- Listar archivos locales ---
-declare -a FILES
+# --- Listar archivos locales (prefiere -dur sobre el raw) ---
+declare -A FILES_MAP
 if [ -d "$PROG_DIR" ]; then
   for f in "$PROG_DIR"/[0-9][0-9][0-9]-*.*; do
     [ -f "$f" ] || continue
     bname=$(basename "$f")
     num=$(echo "$bname" | grep -oP '^\d{3}')
-    FILES+=("$num:$f:$bname")
+    [ -z "$num" ] && continue
+    case "$bname" in
+      *-dur*) FILES_MAP["$num"]="$f:$bname" ;;  # versión editada gana
+      *)      [ -z "${FILES_MAP[$num]:-}" ] && FILES_MAP["$num"]="$f:$bname" ;;
+    esac
   done
 fi
 
-if [ ${#FILES[@]} -eq 0 ]; then
+if [ ${#FILES_MAP[@]} -eq 0 ]; then
   echo "  ✗ No hay archivos en materiales/programas/" >&2
   exit 1
 fi
 
-# --- Ordenar por número ---
+# --- Convertir a array ordenado por número ---
+declare -a FILES
+for k in "${!FILES_MAP[@]}"; do
+  FILES+=("$k:${FILES_MAP[$k]}")
+done
 IFS=$'\n' FILES=($(sort -t: -k1,1n <<< "${FILES[*]}")); unset IFS
 
 # --- Elegir episodio ---
-NUM="${1:-}"
-
 if [ -z "$NUM" ]; then
   # Próximo sin publicar
   for entry in "${FILES[@]}"; do
@@ -98,9 +114,13 @@ TAG="episodio-$NUM"
 
 # Checkear si ya fue publicado
 if grep -qxF "$TAG" <<< "$RELEASED"; then
-  echo "  ✗ $TAG ya está publicado." >&2
-  echo "    https://github.com/$REPO/releases/tag/$TAG" >&2
-  exit 1
+  if [ "$UPDATE" -eq 1 ]; then
+    echo "  $TAG ya existe — actualizando asset con $BNAME..." >&2
+  else
+    echo "  ✗ $TAG ya está publicado. Usá --update para sobreescribir con una versión editada." >&2
+    echo "    https://github.com/$REPO/releases/tag/$TAG" >&2
+    exit 1
+  fi
 fi
 
 echo "  Publicando: $TAG → $BNAME" >&2
@@ -111,15 +131,25 @@ if [ -z "$DATE" ]; then
   DATE=$(date +%d/%m/%Y)
 fi
 
-# --- Crear release y subir asset ---
-echo "" >&2
-echo "  Creando release $TAG en GitHub..." >&2
-
-gh release create "$TAG" \
-  --repo "$REPO" \
-  --title "Episodio $NUM — $DATE" \
-  --notes "Grabación del programa del $DATE." \
-  "$FILE" 2>&1
+# --- Crear o actualizar release ---
+if [ "$UPDATE" -eq 1 ] && grep -qxF "$TAG" <<< "$RELEASED"; then
+  echo "" >&2
+  echo "  Reemplazando assets en $TAG..." >&2
+  # Borrar todos los assets existentes y subir el nuevo
+  gh release view "$TAG" --repo "$REPO" --json assets \
+    --jq '.assets[].name' | while read -r old_asset; do
+    [ -n "$old_asset" ] && gh release delete-asset "$TAG" "$old_asset" --repo "$REPO" --yes >/dev/null 2>&1
+  done
+  gh release upload "$TAG" "$FILE" --repo "$REPO" --clobber 2>&1
+else
+  echo "" >&2
+  echo "  Creando release $TAG en GitHub..." >&2
+  gh release create "$TAG" \
+    --repo "$REPO" \
+    --title "Episodio $NUM — $DATE" \
+    --notes "Grabación del programa del $DATE." \
+    "$FILE" 2>&1
+fi
 
 echo "" >&2
 echo "  ✓ Publicado: $TAG" >&2

@@ -27,28 +27,42 @@ const OUT_DIR = "dist/programa";
 const REPO = "akielbowicz/el-mundo-ha-vivido-equivocado";
 const API = `https://api.github.com/repos/${REPO}/releases?per_page=100`;
 
-// Archivos esperados: 001-20260813.mp3, 002-20260820.mp3, ...
-const EPISODE_RE = /^(\d{3})-(\d{4})(\d{2})(\d{2})\.(mp3|wav|flac|ogg|m4a)$/i;
+// Archivos esperados: 001-20260813.mp3, 001-20260813-dur3520.mp3, 002-20260820.mp3, ...
+const EPISODE_RE = /^(\d{3})-(\d{4})(\d{2})(\d{2})(?:-dur(\d+))?\.(mp3|wav|flac|ogg|m4a)$/i;
 
 function listLocalEpisodes() {
   if (!existsSync(SRC_DIR)) return [];
 
-  const episodios = [];
+  // Un solo archivo por número; el -dur (editado) gana sobre el raw
+  const byNum = new Map();
   for (const f of readdirSync(SRC_DIR)) {
     const m = f.match(EPISODE_RE);
     if (!m) continue;
-    const [, num, y, mo, d] = m;
+    const [, num, y, mo, d, dur] = m;
+    const numKey = parseInt(num, 10);
+    const durSecs = dur ? parseInt(dur, 10) : null;
+    const existing = byNum.get(numKey);
+
+    if (existing) {
+      // Ya hay un -dur (cualquier caso) → este no aporta
+      if (existing.durSecs !== null) continue;
+      // El existente es raw y este también → skip
+      if (durSecs === null) continue;
+      // El existente es raw y este es -dur → reemplazar (dejar pasar)
+    }
+
     const path = join(SRC_DIR, f);
     const sizeMb = (statSync(path).size / (1024 * 1024)).toFixed(1);
-    episodios.push({
-      num: parseInt(num, 10),
+    byNum.set(numKey, {
+      num: numKey,
       file: f,
       sizeMb,
+      durSecs,
       date: new Date(`${y}-${mo}-${d}T12:00:00`),
     });
   }
 
-  return episodios.sort((a, b) => a.num - b.num);
+  return [...byNum.values()].sort((a, b) => a.num - b.num);
 }
 
 async function listReleaseEpisodes() {
@@ -72,11 +86,12 @@ async function listReleaseEpisodes() {
     if (!asset) continue;
 
     const m = asset.name.match(EPISODE_RE);
-    const [, , y, mo, d] = m;
+    const [, , y, mo, d, dur] = m;
     episodios.push({
       num,
       file: asset.name,
       sizeMb: (asset.size / (1024 * 1024)).toFixed(1),
+      durSecs: dur ? parseInt(dur, 10) : null,
       date: new Date(`${y}-${mo}-${d}T12:00:00`),
       downloadUrl: asset.browser_download_url,
     });
@@ -100,6 +115,15 @@ async function fetchAssets(episodios) {
   }
 }
 
+function fmtDuration(totalSecs) {
+  const h = Math.floor(totalSecs / 3600);
+  const m = Math.floor((totalSecs % 3600) / 60);
+  const s = totalSecs % 60;
+  if (h > 0) return s > 0 ? `${h}h ${m}m ${s}s` : `${h}h ${m}m`;
+  if (m > 0) return s > 0 ? `${m}m ${s}s` : `${m}m`;
+  return `${s}s`;
+}
+
 function buildPage(episodios) {
   console.log(`  Encontrados ${episodios.length} episodio(s).`);
 
@@ -114,7 +138,7 @@ function buildPage(episodios) {
       return `
     <article class="episodio">
       <h2>Episodio ${ep.num} — ${published}</h2>
-      <p class="meta">${published} — ${ep.sizeMb} MB</p>
+      <p class="meta">${published} — ${ep.sizeMb} MB${ep.durSecs ? ` — ${fmtDuration(ep.durSecs)}` : ""}</p>
       <audio controls preload="none">
         <source src="./${ep.file}" type="audio/mpeg">
         Tu navegador no soporta el reproductor de audio.
