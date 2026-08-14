@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Escaleta del programa — El mundo ha vivido equivocado">
+<title>$title$ — Grilla — El mundo ha vivido equivocado</title>
+<link rel="stylesheet" href="/style.css">
+<style>
+  .show-meta { color: var(--color-muted); font-family: var(--font-ui); font-size: 0.875rem; margin-bottom: 1.5rem; }
+  .show-meta span { display: inline-block; margin-right: 1.5rem; }
+  .show-meta strong { color: var(--color-text); }
+  .show-nav { margin-top: 2rem; font-family: var(--font-ui); }
+  .show-nav a { color: var(--color-accent); }
+  table { width: 100%; }
+  th { text-align: left; }
+</style>
+</head>
+<body>
+<a href="#main-content" class="skip-link">Saltar al contenido principal</a>
+<header>
+<div class="container">
+<p class="breadcrumb"><a href="/">Inicio</a> / <a href="/programa/cronograma/">Cronograma</a> / Grilla</p>
+<h1 class="site-title">$title$</h1>
+<nav aria-label="Principal">
+<ul>
+<li><a href="/">Inicio</a></li>
+<li><a href="/episodios/">Episodios</a></li>
+<li><a href="/programa/cronograma/">Cronograma</a></li>
+<li><a href="/sobre/">Sobre el programa</a></li>
+</ul>
+</nav>
+</div>
+</header>
+<main id="main-content">
+<div class="container">
+<div class="page-content">
+<div class="show-meta">
+$if(date)$<span><strong>Fecha:</strong> $date$</span>$endif$
+$if(author)$<span><strong>Conduce:</strong> $author$</span>$endif$
+</div>
+$body$
+</div>
+</div>
+</main>
+<footer>
+<div class="container">
+<p>© 2026 El mundo ha vivido equivocado — <a href="/_show/">Todas las grillas</a></p>
+</div>
+</footer>
+</body>
+</html>

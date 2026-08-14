@@ -4,6 +4,9 @@ dist/
 *.epub
 materiales/raw/
 materiales/cortinas/
+materiales/grabaciones/
+materiales/final/
+materiales/programas/
 separated/
 
 # Beads / Dolt files (added by bd init)

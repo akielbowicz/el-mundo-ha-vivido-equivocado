@@ -18,9 +18,11 @@ build: bundle-js clean-org-pages
     node scripts/build-textos.mjs
     node scripts/build-epub.mjs
     node scripts/build-org-pages.mjs
+    node scripts/build-show.mjs
     cp resources/CNAME dist/
     node scripts/inject-player.mjs
     node scripts/build-sitemap.mjs
+    node scripts/build-programa.mjs
     # Copy referenced materials assets
     cp -r materiales/raw dist/materiales/ 2>/dev/null || true
 
@@ -39,6 +41,14 @@ check-html: install
 # Full a11y audit against built site (pre-push)
 check-a11y: install
     node scripts/a11y-audit.mjs
+
+# Download radio stream (default: 1h, use ARGS for --duration N --outdir DIR)
+download-stream ARGS:
+    ./scripts/download-stream {{ARGS}}
+
+# Publish a recording as a GitHub Release and get a shareable link
+publish-episodio AUDIO:
+    ./scripts/publish-episodio {{AUDIO}}
 
 # Create a new texto from interactive prompts
 new-texto:
@@ -69,7 +79,15 @@ to-mp3 ARGS:
 
 # Remove stale org-generated pages before rebuild
 clean-org-pages:
-    rm -rf dist/paginas/ dist/programa/ dist/sobre/ dist/contacto/
+    rm -rf dist/paginas/ dist/programa/ dist/sobre/ dist/contacto/ dist/_show/
+
+# Build grilla pages (HTML + PDF) from materiales/grillas/
+build-show:
+    node scripts/build-show.mjs
+
+# Clean only the show output
+clean-show:
+    rm -rf dist/_show/
 
 clean:
     rm -rf dist node_modules

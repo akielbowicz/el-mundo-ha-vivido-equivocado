@@ -1,0 +1,105 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# publish-episodio
+# Publica una grabación como GitHub Release y genera link compartible.
+#
+# Uso:
+#   ./scripts/publish-episodio <archivo.mp3>
+#   ./scripts/publish-episodio materiales/grabaciones/stream_20260813_184501_5400s.mp3
+#
+# El script:
+#   - Copia el archivo a materiales/programas/
+#   - Escanea releases existentes para asignar el próximo número
+#   - Crea un release episodio-NNN con el audio como asset
+#   - Imprime la URL de descarga
+
+SCRIPT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+REPO="akielbowicz/el-mundo-ha-vivido-equivocado"
+
+usage() {
+  cat >&2 <<EOF
+Uso: $(basename "$0") <archivo.mp3>
+
+Publica una grabación en GitHub Releases.
+
+Argumentos:
+  archivo    Ruta al archivo de audio (.mp3)
+
+Ejemplo:
+  ./scripts/publish-episodio materiales/grabaciones/stream_20260813_184501_5400s.mp3
+EOF
+  exit 0
+}
+
+usage_err() {
+  usage
+  exit 1
+}
+
+# --- Args ---
+[ "$#" -eq 0 ] && usage_err
+[ "$1" = "--help" ] || [ "$1" = "-h" ] && usage
+
+AUDIO="$1"
+
+if [ ! -f "$AUDIO" ]; then
+  echo "  ✗ Archivo no encontrado: $AUDIO" >&2
+  exit 1
+fi
+
+case "$AUDIO" in
+  *.mp3|*.wav|*.flac|*.ogg|*.m4a) ;;
+  *) echo "  ✗ Formato no soportado. Usá .mp3 .wav .flac .ogg .m4a" >&2; exit 1 ;;
+esac
+
+# --- Determinar próximo número de episodio ---
+echo "" >&2
+echo "  Escaneando episodios existentes..." >&2
+
+# Releases de GitHub
+EXISTING=$(gh release list --repo "$REPO" --limit 100 --json tagName --jq '.[].tagName' 2>/dev/null | grep -oP 'episodio-\K\d+' || true)
+
+# Archivos locales en materiales/programas/
+LOCAL=$(ls "$SCRIPT_DIR/materiales/programas/" 2>/dev/null | grep -oP '^\d+' || true)
+
+NEXT=1
+for n in $EXISTING $LOCAL; do
+  if [ "$n" -ge "$NEXT" ]; then
+    NEXT=$((n + 1))
+  fi
+done
+
+TAG=$(printf "episodio-%03d" "$NEXT")
+EP_DIR="materiales/programas"
+
+echo "  Siguiente: $TAG" >&2
+
+# --- Copiar a materiales/programas/ con nombre estandar ---
+EXT="${AUDIO##*.}"
+DEST_NAME=$(printf "%03d-%s.%s" "$NEXT" "$(date +%Y%m%d)" "$EXT")
+DEST="$SCRIPT_DIR/$EP_DIR/$DEST_NAME"
+
+mkdir -p "$SCRIPT_DIR/$EP_DIR"
+cp "$AUDIO" "$DEST"
+echo "  Copiado:  $EP_DIR/$DEST_NAME" >&2
+
+# --- Crear release y subir asset ---
+echo "" >&2
+echo "  Creando release $TAG en GitHub..." >&2
+
+gh release create "$TAG" \
+  --repo "$REPO" \
+  --title "Episodio $NEXT — $(date +%d/%m/%Y)" \
+  --notes "Grabación del programa del $(date +%d/%m/%Y)." \
+  "$DEST" 2>&1
+
+echo "" >&2
+echo "  ✓ Publicado: $TAG" >&2
+
+# URL de descarga directa
+DOWNLOAD_URL="https://github.com/$REPO/releases/download/$TAG/$DEST_NAME"
+echo "" >&2
+echo "  Link compartible:" >&2
+echo "    $DOWNLOAD_URL" >&2
+echo "" >&2
