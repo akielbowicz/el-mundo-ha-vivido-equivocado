@@ -1,8 +1,9 @@
 /**
  * build-programa.mjs
  *
- * Genera una página oculta en /programa/ con los episodios publicados como
- * releases de GitHub. Cada episodio tiene un reproductor <audio>.
+ * Genera una página oculta en /programa/ con los episodios en
+ * materiales/programas/ (ej: 001-20260813.mp3). Copia los audios a
+ * dist/programa/ y crea un reproductor <audio> por episodio.
  *
  * La página NO está linkeada desde la navegación principal — solo accesible
  * por URL directa (equivocadxs.ar/programa/).
@@ -10,52 +11,66 @@
  * Usage: node scripts/build-programa.mjs
  */
 
-const REPO = "akielbowicz/el-mundo-ha-vivido-equivocado";
-const API = `https://api.github.com/repos/${REPO}/releases?per_page=100`;
+import { mkdirSync, readdirSync, statSync, copyFileSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
+
+const SRC_DIR = "materiales/programas";
 const OUT_DIR = "dist/programa";
-const SITE = "https://equivocadxs.ar";
 
-async function main() {
-  console.log("  Fetching releases from GitHub...");
+// Archivos esperados: 001-20260813.mp3, 002-20260820.mp3, ...
+const EPISODE_RE = /^(\d{3})-(\d{4})(\d{2})(\d{2})\.(mp3|wav|flac|ogg|m4a)$/i;
 
-  const res = await fetch(API, {
-    headers: { Accept: "application/vnd.github+json" },
-  });
-
-  if (!res.ok) {
-    console.error(`  ✗ GitHub API error: ${res.status} ${res.statusText}`);
-    process.exit(1);
+function listEpisodes() {
+  let files;
+  try {
+    files = readdirSync(SRC_DIR);
+  } catch {
+    return []; // no hay carpeta todavía
   }
 
-  const releases = await res.json();
-
-  // Filter only episodio-* tags, sort ascending
-  const episodios = releases
-    .filter((r) => r.tag_name?.startsWith("episodio-"))
-    .sort((a, b) => {
-      const na = parseInt(a.tag_name.replace("episodio-", ""), 10);
-      const nb = parseInt(b.tag_name.replace("episodio-", ""), 10);
-      return na - nb;
+  const episodios = [];
+  for (const f of files) {
+    const m = f.match(EPISODE_RE);
+    if (!m) {
+      console.log(`  (saltando archivo sin patrón: ${f})`);
+      continue;
+    }
+    const [, num, y, mo, d] = m;
+    const path = join(SRC_DIR, f);
+    const sizeMb = (statSync(path).size / (1024 * 1024)).toFixed(1);
+    episodios.push({
+      num: parseInt(num, 10),
+      file: f,
+      sizeMb,
+      date: new Date(`${y}-${mo}-${d}T12:00:00`),
     });
+  }
+
+  return episodios.sort((a, b) => a.num - b.num);
+}
+
+function main() {
+  console.log("  Escaneando materiales/programas/...");
+  const episodios = listEpisodes();
 
   if (episodios.length === 0) {
-    console.log("  No episodes found. Skipping.");
+    console.log("  No hay episodios. Skipping.");
     return;
   }
 
-  console.log(`  Found ${episodios.length} episode(s).`);
+  console.log(`  Encontrados ${episodios.length} episodio(s).`);
 
-  // Build HTML
+  // Copiar audios a dist/programa/
+  mkdirSync(OUT_DIR, { recursive: true });
+  for (const ep of episodios) {
+    copyFileSync(join(SRC_DIR, ep.file), join(OUT_DIR, ep.file));
+  }
+  console.log("  Audios copiados a dist/programa/.");
+
+  // Construir HTML
   const episodesHtml = episodios
     .map((ep) => {
-      const audioAsset = ep.assets.find((a) =>
-        /\.(mp3|wav|flac|ogg|m4a)$/i.test(a.name)
-      );
-
-      if (!audioAsset) return "";
-
-      const sizeMb = (audioAsset.size / (1024 * 1024)).toFixed(1);
-      const published = new Date(ep.published_at).toLocaleDateString("es-AR", {
+      const published = ep.date.toLocaleDateString("es-AR", {
         year: "numeric",
         month: "long",
         day: "numeric",
@@ -63,14 +78,14 @@ async function main() {
 
       return `
     <article class="episodio">
-      <h2>${ep.name || ep.tag_name}</h2>
-      <p class="meta">${published} — ${sizeMb} MB</p>
+      <h2>Episodio ${ep.num} — ${published}</h2>
+      <p class="meta">${published} — ${ep.sizeMb} MB</p>
       <audio controls preload="none">
-        <source src="${audioAsset.browser_download_url}" type="audio/mpeg">
+        <source src="./${ep.file}" type="audio/mpeg">
         Tu navegador no soporta el reproductor de audio.
       </audio>
       <p class="descarga">
-        <a href="${audioAsset.browser_download_url}" download>Descargar MP3</a>
+        <a href="./${ep.file}" download>Descargar MP3</a>
       </p>
     </article>`;
     })
@@ -120,14 +135,8 @@ ${episodesHtml}
 </body>
 </html>`;
 
-  // Write
-  const { mkdirSync, writeFileSync } = await import("node:fs");
-  mkdirSync(OUT_DIR, { recursive: true });
-  writeFileSync(`${OUT_DIR}/index.html`, html);
-  console.log(`  ✓ Written: ${OUT_DIR}/index.html`);
+  writeFileSync(join(OUT_DIR, "index.html"), html);
+  console.log(`  ✓ Written: ${join(OUT_DIR, "index.html")}`);
 }
 
-main().catch((err) => {
-  console.error("  ✗ Error:", err.message);
-  process.exit(1);
-});
+main();
