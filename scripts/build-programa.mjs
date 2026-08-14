@@ -1,9 +1,16 @@
 /**
  * build-programa.mjs
  *
- * Genera una página oculta en /programa/ con los episodios en
- * materiales/programas/ (ej: 001-20260813.mp3). Copia los audios a
- * dist/programa/ y crea un reproductor <audio> por episodio.
+ * Genera una página oculta en /programa/ con los episodios del programa.
+ * Cada episodio tiene un reproductor <audio>.
+ *
+ * Fuente de episodios (en orden de prioridad):
+ *   1. Archivos locales en materiales/programas/ (001-20260813.mp3)
+ *   2. Si no hay locales: assets de los releases de GitHub (caso CI,
+ *      donde la carpeta materiales/ no se commitea)
+ *
+ * Los audios se copian a dist/programa/ y la página los sirve desde el
+ * propio sitio.
  *
  * La página NO está linkeada desde la navegación principal — solo accesible
  * por URL directa (equivocadxs.ar/programa/).
@@ -11,30 +18,25 @@
  * Usage: node scripts/build-programa.mjs
  */
 
-import { mkdirSync, readdirSync, statSync, copyFileSync, writeFileSync } from "node:fs";
+import { mkdirSync, readdirSync, statSync, copyFileSync, writeFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
+import { execSync } from "node:child_process";
 
 const SRC_DIR = "materiales/programas";
 const OUT_DIR = "dist/programa";
+const REPO = "akielbowicz/el-mundo-ha-vivido-equivocado";
+const API = `https://api.github.com/repos/${REPO}/releases?per_page=100`;
 
 // Archivos esperados: 001-20260813.mp3, 002-20260820.mp3, ...
 const EPISODE_RE = /^(\d{3})-(\d{4})(\d{2})(\d{2})\.(mp3|wav|flac|ogg|m4a)$/i;
 
-function listEpisodes() {
-  let files;
-  try {
-    files = readdirSync(SRC_DIR);
-  } catch {
-    return []; // no hay carpeta todavía
-  }
+function listLocalEpisodes() {
+  if (!existsSync(SRC_DIR)) return [];
 
   const episodios = [];
-  for (const f of files) {
+  for (const f of readdirSync(SRC_DIR)) {
     const m = f.match(EPISODE_RE);
-    if (!m) {
-      console.log(`  (saltando archivo sin patrón: ${f})`);
-      continue;
-    }
+    if (!m) continue;
     const [, num, y, mo, d] = m;
     const path = join(SRC_DIR, f);
     const sizeMb = (statSync(path).size / (1024 * 1024)).toFixed(1);
@@ -49,25 +51,58 @@ function listEpisodes() {
   return episodios.sort((a, b) => a.num - b.num);
 }
 
-function main() {
-  console.log("  Escaneando materiales/programas/...");
-  const episodios = listEpisodes();
+async function listReleaseEpisodes() {
+  console.log("  No hay locales — consultando releases de GitHub...");
 
-  if (episodios.length === 0) {
-    console.log("  No hay episodios. Skipping.");
-    return;
+  const res = await fetch(API, {
+    headers: { Accept: "application/vnd.github+json" },
+  });
+  if (!res.ok) {
+    console.error(`  ✗ GitHub API error: ${res.status} ${res.statusText}`);
+    process.exit(1);
   }
 
+  const releases = await res.json();
+  const episodios = [];
+
+  for (const r of releases) {
+    if (!r.tag_name?.startsWith("episodio-")) continue;
+    const num = parseInt(r.tag_name.replace("episodio-", ""), 10);
+    const asset = r.assets?.find((a) => EPISODE_RE.test(a.name));
+    if (!asset) continue;
+
+    const m = asset.name.match(EPISODE_RE);
+    const [, , y, mo, d] = m;
+    episodios.push({
+      num,
+      file: asset.name,
+      sizeMb: (asset.size / (1024 * 1024)).toFixed(1),
+      date: new Date(`${y}-${mo}-${d}T12:00:00`),
+      downloadUrl: asset.browser_download_url,
+    });
+  }
+
+  return episodios.sort((a, b) => a.num - b.num);
+}
+
+async function fetchAssets(episodios) {
+  console.log("  Descargando assets de releases...");
+  mkdirSync(OUT_DIR, { recursive: true });
+
+  for (const ep of episodios) {
+    const dest = join(OUT_DIR, ep.file);
+    if (existsSync(dest)) {
+      console.log(`  (ya existe ${ep.file}, skip)`);
+      continue;
+    }
+    console.log(`  Descargando ${ep.file}...`);
+    execSync(`curl -sL "${ep.downloadUrl}" -o "${dest}"`);
+  }
+}
+
+function buildPage(episodios) {
   console.log(`  Encontrados ${episodios.length} episodio(s).`);
 
-  // Copiar audios a dist/programa/
-  mkdirSync(OUT_DIR, { recursive: true });
-  for (const ep of episodios) {
-    copyFileSync(join(SRC_DIR, ep.file), join(OUT_DIR, ep.file));
-  }
-  console.log("  Audios copiados a dist/programa/.");
-
-  // Construir HTML
   const episodesHtml = episodios
     .map((ep) => {
       const published = ep.date.toLocaleDateString("es-AR", {
@@ -135,8 +170,37 @@ ${episodesHtml}
 </body>
 </html>`;
 
+  mkdirSync(OUT_DIR, { recursive: true });
   writeFileSync(join(OUT_DIR, "index.html"), html);
   console.log(`  ✓ Written: ${join(OUT_DIR, "index.html")}`);
 }
 
-main();
+async function main() {
+  console.log("  Escaneando materiales/programas/...");
+
+  let episodios = listLocalEpisodes();
+
+  if (episodios.length > 0) {
+    // Copiar audios locales a dist/programa/
+    mkdirSync(OUT_DIR, { recursive: true });
+    for (const ep of episodios) {
+      copyFileSync(join(SRC_DIR, ep.file), join(OUT_DIR, ep.file));
+    }
+    console.log("  Audios locales copiados a dist/programa/.");
+  } else {
+    // Caso CI: descargar desde releases
+    episodios = await listReleaseEpisodes();
+    if (episodios.length === 0) {
+      console.log("  No hay episodios publicados. Skipping.");
+      return;
+    }
+    await fetchAssets(episodios);
+  }
+
+  buildPage(episodios);
+}
+
+main().catch((err) => {
+  console.error("  ✗ Error:", err.message);
+  process.exit(1);
+});
