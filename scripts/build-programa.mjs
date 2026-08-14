@@ -96,7 +96,7 @@ async function fetchAssets(episodios) {
       continue;
     }
     console.log(`  Descargando ${ep.file}...`);
-    execSync(`curl -sL "${ep.downloadUrl}" -o "${dest}"`);
+    execSync(`curl -fsL "${ep.downloadUrl}" -o "${dest}"`);
   }
 }
 

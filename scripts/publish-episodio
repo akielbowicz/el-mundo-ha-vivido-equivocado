@@ -28,11 +28,6 @@ EOF
   exit 0
 }
 
-usage_err() {
-  usage
-  exit 1
-}
-
 # --- Help ---
 [ "$#" -gt 0 ] && { [ "$1" = "--help" ] || [ "$1" = "-h" ]; } && usage
 
@@ -110,14 +105,20 @@ fi
 
 echo "  Publicando: $TAG → $BNAME" >&2
 
+# Fecha desde el filename (001-20260813.mp3 → 13/08/2026)
+DATE=$(echo "$BNAME" | grep -oP '\d{8}' | sed -E 's/(....)(..)(..)/\3\/\2\/\1/')
+if [ -z "$DATE" ]; then
+  DATE=$(date +%d/%m/%Y)
+fi
+
 # --- Crear release y subir asset ---
 echo "" >&2
 echo "  Creando release $TAG en GitHub..." >&2
 
 gh release create "$TAG" \
   --repo "$REPO" \
-  --title "Episodio $NUM — $(date +%d/%m/%Y)" \
-  --notes "Grabación del programa del $BNAME." \
+  --title "Episodio $NUM — $DATE" \
+  --notes "Grabación del programa del $DATE." \
   "$FILE" 2>&1
 
 echo "" >&2
