@@ -1,0 +1,119 @@
+#+TITLE: Workflow — Grabación y publicación del programa
+#+DATE: 2026-08-13
+
+* Flujo completo
+
+Cada jueves el programa sale al aire de 19:00 a 20:15. El flujo automatiza
+grabación, edición, publicación y deploy al sitio.
+
+** 1. Grabación automática (timer systemd)
+
+El timer ~download-stream.timer~ dispara ~download-stream.service~ los
+jueves a las 18:45. Graba 1h30m (19:00–20:15 más margen previo).
+
+- Timer: ~$HOME/.config/systemd/user/download-stream.timer~
+- Service: ~$HOME/.config/systemd/user/download-stream.service~
+- Script: ~scripts/download-stream~
+- Salida: ~materiales/grabaciones/stream_<timestamp>_<duracion>s.mp3~
+
+Comandos útiles:
+
+| Qué | Cómo |
+|-----|------|
+| Ver timer | ~systemctl --user list-timers | grep download-stream~ |
+| Logs | ~journalctl --user -u download-stream.service~ |
+| Desactivar | ~systemctl --user disable --now download-stream.timer~ |
+
+El script acepta ~--duration~ en formatos humanos:
+
+| Formato | Ejemplo | Segundos |
+|---------|---------|----------|
+| s | ~10s~ | 10 |
+| m | ~5m~ | 300 |
+| h | ~2h~ | 7200 |
+| combinado | ~5m30s~ | 330 |
+| HH:MM:SS | ~1:30:00~ | 5400 |
+
+** 2. Edición manual
+
+El archivo raw de ~materiales/grabaciones/~ se edita manualmente (cortar
+silencios, ajustar inicio/fin). El resultado se guarda en
+~materiales/programas/~ con el formato:
+
+: NNN-YYYYMMDD-durSSSSS.ext
+
+Ejemplo:
+
+: 001-20260813-dur3520.mp3
+
+Donde ~dur3520~ = 3520 segundos (58m 40s). Este sufijo es opcional pero
+recomendado: si existe, el sistema lo prefiere sobre el raw sin -dur.
+El .wav fuente también puede estar en ~materiales/programas/~, pero el
+build lo ignora si existe el ~-dur~ correspondiente.
+
+** 3. Publicación en GitHub Releases (guía)
+
+Se usa ~scripts/publish-episodio~. Lee desde ~materiales/programas/~ y publica
+en GitHub Releases.
+
+Comandos:
+
+| Comando | Qué hace |
+|---------|----------|
+| ~just publish-episodio~ | Próximo episodio sin publicar |
+| ~just publish-episodio 001~ | Episodio específico |
+| ~just publish-episodio --update 001~ | Reemplaza asset de release existente (tras editar) |
+
+Crea (o actualiza) un release ~episodio-NNN~ con el audio como asset. La
+fecha del título se extrae del filename, no de la fecha actual.
+
+** 4. Deploy al sitio (CI/CD)
+
+Al pushear a ~main~:
+
+1. GH Actions corre ~just build~
+2. ~scripts/build-programa.mjs~:
+   - Busca archivos en ~materiales/programas/~ (locales)
+   - Si no hay locales (caso CI), descarga assets desde GitHub Releases
+   - Copia los audios a ~dist/programa/~
+   - Genera ~dist/programa/index.html~ con reproductor ~<audio>~ por episodio
+3. El site depliega a GitHub Pages
+
+La página vive en https://equivocadxs.ar/programa/ (sin link en la
+navegación principal — solo accesible por URL directa).
+
+** 5. Scripts involucrados
+
+| Script | Lenguaje | Rol |
+|--------|----------|-----|
+| ~scripts/download-stream~ | bash | Graba stream vía ffmpeg |
+| ~scripts/publish-episodio~ | bash | Publica en GitHub Releases (requiere ~gh~ CLI) |
+| ~scripts/build-programa.mjs~ | Node.js | Genera página /programa/ con players |
+
+** 6. Archivos y directorios
+
+| Ruta | Contenido | Git |
+|------|-----------|-----|
+| ~materiales/grabaciones/~ | Grabaciones raw (stream completo) | Ignorado |
+| ~materiales/programas/~ | Archivos editados (con -dur) | Ignorado |
+| ~materiales/raw/~ | Otros assets de audio | Ignorado |
+| ~dist/programa/~ | Output del build (copia de audios + página) | Ignorado |
+| ~.gitignore~ | Ignora ~grabaciones/~, ~programas/~, ~final/~ | Trackeado |
+| ~.config/systemd/user/download-stream.*~ | Timer + service systemd | Fuera del repo |
+
+** 7. CI/CD (GitHub Actions)
+
+Workflow: ~.github/workflows/deploy.yml~
+
+Pasos del build:
+1. Checkout + setup Node + just
+2. ~just build~ (compila squint, episodios, textos, EPUB, org-pages, programa)
+3. Valida HTML, reader-mode, EPUB, JS
+4. Upload artifact ~dist/~ → Pages deploy
+
+* Notas
+
+- El asset del release y la página siempre sirven el mismo archivo (el
+  editado de ~materiales/programas/~)
+- ~gh~ CLI debe estar autenticado para publicar (~gh auth status~)
+- El timer systemd user se instaló con: ~systemctl --user enable --now download-stream.timer~
