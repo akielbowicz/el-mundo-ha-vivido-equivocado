@@ -54,19 +54,72 @@ else
   OUTPUT_TEMPLATE="$OUTDIR/%(title)s.%(ext)s"
 fi
 
+# --- Fast path: try without cookies (works for most videos) ---
+_fast_path() {
+  yt-dlp --js-runtimes node \
+         --no-warnings \
+         -x \
+         --audio-format wav \
+         --audio-quality 0 \
+         -o "$OUTPUT_TEMPLATE" \
+         "$URL" 2>&1
+}
+
+# --- Fallback: retry with cookies + JS challenge (videos that return 403) ---
+_fallback_with_cookies() {
+  # Buscar cookies de navegador flatpak (Brave, Chromium, Firefox)
+  local COOKIE_SOURCE=""
+  for src in \
+    "brave:$HOME/.var/app/com.brave.Browser/config/BraveSoftware/Brave-Browser" \
+    "chromium:$HOME/.var/app/org.chromium.Chromium/config/chromium" \
+    "firefox:$HOME/.var/app/org.mozilla.firefox/.mozilla/firefox/3nq2apwk.default-release"; do
+    if [ -e "${src#*:}" ]; then
+      COOKIE_SOURCE="$src"
+      break
+    fi
+  done
+
+  if [ -z "$COOKIE_SOURCE" ]; then
+    echo "  ✗ No se encontró navegador flatpak con cookies. Instalá Brave, Chromium o Firefox desde Flathub e iniciá sesión en YouTube." >&2
+    return 1
+  fi
+
+  echo "  (fallback: usando cookies de ${COOKIE_SOURCE%%:*})" >&2
+
+  yt-dlp --js-runtimes node \
+         --remote-components ejs:github \
+         --cookies-from-browser "$COOKIE_SOURCE" \
+         --no-warnings \
+         -x \
+         --audio-format wav \
+         --audio-quality 0 \
+         -o "$OUTPUT_TEMPLATE" \
+         "$URL" 2>&1
+}
+
 echo "" >&2
 echo "  Descargando audio de: $URL" >&2
 echo "  Guardando en: $OUTDIR/" >&2
 echo "" >&2
 
-yt-dlp --js-runtimes node \
-       --no-warnings \
-       -x \
-       --audio-format wav \
-       --audio-quality 0 \
-       -o "$OUTPUT_TEMPLATE" \
-       "$URL" >&2
+if _fast_path; then
+  echo "" >&2
+  echo "  ✓ Listo." >&2
+  echo "" >&2
+else
+  # Fast path falló — reintentar con cookies si el error es 403 (YouTube anti-bot)
+  echo "" >&2
+  echo "  ⚠ Intento directo falló, probando con cookies de navegador..." >&2
+  echo "" >&2
 
-echo "" >&2
-echo "  ✓ Listo." >&2
-echo "" >&2
+  if _fallback_with_cookies; then
+    echo "" >&2
+    echo "  ✓ Listo (con cookies)." >&2
+    echo "" >&2
+  else
+    echo "" >&2
+    echo "  ✗ No se pudo descargar el audio." >&2
+    echo "" >&2
+    exit 1
+  fi
+fi
