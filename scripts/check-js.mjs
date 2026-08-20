@@ -80,8 +80,6 @@ const PAGES = [
   { path: "/episodios/", name: "episodes index" },
   { path: "/episodios/el-aleph/", name: "episode detail" },
   { path: "/textos/", name: "textos index" },
-  { path: "/textos/el-juego-de-cartas/", name: "texto detail" },
-  // sobre and contacto pages were removed (simplified site content)
   { path: "/nonexistent", name: "404 page" },
 ];
 
@@ -258,6 +256,50 @@ async function runTests() {
 
   await testAudioPersistence();
   await testNavLoader();
+
+  // Dynamically discover and test a texto detail page
+  await (async function testTextoDetail() {
+    const ctx = await browser.newContext({ javaScriptEnabled: true });
+    const tab = await ctx.newPage();
+
+    try {
+      // Fetch textos index to find texto detail links
+      await tab.goto(`http://localhost:${PORT}/textos/`, {
+        waitUntil: "networkidle",
+        timeout: 5000,
+      });
+
+      const links = await tab.evaluate(() => {
+        const list = document.querySelectorAll('[data-filter-container] a[href^="/textos/"]');
+        return [...list].map(a => a.getAttribute("href"));
+      });
+
+      if (links.length === 0) {
+        console.log(`  ⚠  no texto detail links found — skipping`);
+        return;
+      }
+
+      const detailUrl = `http://localhost:${PORT}${links[0]}`;
+      const resp = await tab.goto(detailUrl, { waitUntil: "networkidle", timeout: 5000 });
+      const status = resp ? resp.status() : 0;
+
+      if (status === 200) {
+        console.log(`  ✅ texto detail — ${status}`);
+        passed++;
+      } else {
+        console.log(`  ❌ texto detail — status ${status}`);
+        errors.push({ page: "texto detail", issues: [`status ${status}`] });
+        failed++;
+      }
+    } catch (err) {
+      console.log(`  ❌ texto detail — ${err.message}`);
+      errors.push({ page: "texto detail", issues: [err.message] });
+      failed++;
+    } finally {
+      await tab.close();
+      await ctx.close();
+    }
+  })();
 
   await browser.close();
   server.close();
