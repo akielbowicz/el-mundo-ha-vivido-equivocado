@@ -77,8 +77,8 @@ function main() {
   const hasWeasyprint = weasyprintAvailable();
 
   if (!hasPandoc) {
-    console.error("  ❌ pandoc no está instalado. Ver: https://pandoc.org/");
-    process.exit(1);
+    console.log("  ⚠  pandoc no instalado — salteando grillas");
+    return;
   }
 
   const metadata = [];
