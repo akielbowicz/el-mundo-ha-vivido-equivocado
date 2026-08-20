@@ -80,7 +80,7 @@ const PAGES = [
   { path: "/episodios/", name: "episodes index" },
   { path: "/episodios/el-aleph/", name: "episode detail" },
   { path: "/textos/", name: "textos index" },
-  { path: "/textos/el-aleph-fragmento/", name: "texto detail" },
+  { path: "/textos/el-juego-de-cartas/", name: "texto detail" },
   // sobre and contacto pages were removed (simplified site content)
   { path: "/nonexistent", name: "404 page" },
 ];
