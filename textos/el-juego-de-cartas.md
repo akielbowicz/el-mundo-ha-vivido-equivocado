@@ -2,7 +2,7 @@
 title: "EL JUEGO DE CARTAS"
 author: "Hebe Uhart"
 date: "2026-08-20"
-status: draft
+status: published
 description: "Un relato sobre el aprendizaje y las reglas de un juego de cartas, desde la perspectiva de una niña. El texto describe la evolución del juego y las emociones asociadas a sus reglas y personajes."
 genre: "cuento"
 license: "Fragmento (derecho de cita)"

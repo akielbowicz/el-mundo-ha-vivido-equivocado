@@ -1,0 +1,18 @@
+#+TITLE: Grilla de programa — {{programa}}
+#+DATE: {{fecha}}
+#+AUTHOR: {{conductor}}
+
+* Escaleta
+
+Copiar este archivo a NNN.org (según número de episodio) y reemplazar los
+{{placeholders}}. Agregar o quitar filas según la estructura del episodio.
+
+| Bloque | Duración | Sección | Contenido |
+|--------+----------+---------+-----------|
+|      1 | {{mm:ss}} | Cortina de apertura | Saludo + presentación. Cortina: cortina-intro (fade in, fade out) |
+|      2 | {{mm:ss}} | Introducción | Presentación del cuento: autor, datos, gancho |
+|      3 | {{mm:ss}} | Lectura | Lectura del cuento. Bump musical si aplica |
+|      4 | {{mm:ss}} | Comentario | Impresiones, análisis, temas |
+|      5 | {{mm:ss}} | Cierre | Despedida, avance próximo ep. Cortina: cortina-cierre (fade out) |
+
+Exportar a PDF: M-x org-latex-export-to-pdf

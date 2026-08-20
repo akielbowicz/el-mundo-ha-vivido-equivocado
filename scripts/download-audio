@@ -56,7 +56,7 @@ fi
 
 # --- Fast path: try without cookies (works for most videos) ---
 _fast_path() {
-  yt-dlp --js-runtimes node \
+  uv tool run yt-dlp --js-runtimes node \
          --no-warnings \
          -x \
          --audio-format wav \
@@ -86,7 +86,7 @@ _fallback_with_cookies() {
 
   echo "  (fallback: usando cookies de ${COOKIE_SOURCE%%:*})" >&2
 
-  yt-dlp --js-runtimes node \
+  uv tool run yt-dlp --js-runtimes node \
          --remote-components ejs:github \
          --cookies-from-browser "$COOKIE_SOURCE" \
          --no-warnings \

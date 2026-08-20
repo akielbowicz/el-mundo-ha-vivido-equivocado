@@ -1,0 +1,13 @@
+#+TITLE: Grilla de programa — Episodio 1: El Aleph
+#+DATE: 2026-08-06
+#+AUTHOR: Sasha
+
+* Escaleta
+
+| Bloque | Duración | Sección | Contenido |
+|--------+----------+---------+-----------|
+|      1 | 1:00 | Cortina de apertura | Saludo + presentación. Cortina: cortina-intro (fade in, fade out) |
+|      2 | 2:30 | Introducción | Borges, El Aleph (1945). Qué es el Aleph, por qué importa |
+|      3 | 10:00 | Lectura | Lectura del cuento. Bump: Sympathy for the Devil en pausa |
+|      4 | 8:30 | Comentario | La imposibilidad de contar lo infinito. Amor y obsesión |
+|      5 | 1:00 | Cierre | Despedida, próximo ep: La noche boca arriba. Cortina-cierre (fade out) |
