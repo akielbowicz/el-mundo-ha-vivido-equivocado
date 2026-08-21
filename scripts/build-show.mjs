@@ -160,8 +160,7 @@ function generateIndex(items) {
 <ul>
 <li><a href="/">Inicio</a></li>
 <li><a href="/episodios/">Episodios</a></li>
-<li><a href="/programa/cronograma/">Cronograma</a></li>
-<li><a href="/sobre/">Sobre el programa</a></li>
+<li><a href="/textos/">Textos</a></li>
 </ul>
 </nav>
 </div>

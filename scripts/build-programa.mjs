@@ -155,7 +155,6 @@ function buildPage(episodios) {
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="robots" content="noindex, nofollow">
 <title>Programa — El mundo ha vivido equivocado</title>
 <link rel="stylesheet" href="/style.css">
 <style>
@@ -179,6 +178,8 @@ function buildPage(episodios) {
 <nav aria-label="Principal">
 <ul>
 <li><a href="/">Inicio</a></li>
+<li><a href="/episodios/">Episodios</a></li>
+<li><a href="/textos/">Textos</a></li>
 </ul>
 </nav>
 </div>

@@ -320,7 +320,7 @@ function generateIndex(episodes) {
         <ul>
           <li><a href="/">Inicio</a></li>
           <li><a href="/episodios/" aria-current="page">Episodios</a></li>
-          <li><a href="/sobre/">Sobre el programa</a></li>
+          <li><a href="/textos/">Textos</a></li>
         </ul>
       </nav>
       <div class="search-container" role="search">
@@ -337,6 +337,7 @@ function generateIndex(episodes) {
       ${chips}
       <ul class="episode-list" data-filter-container>${items}
       </ul>
+      <p class="programa-link"><a href="/programa/">Escuchá los programas completos →</a></p>
       <div class="filter-empty" data-filter-empty style="display:none">
         <p>No hay episodios con estos filtros.</p>
         <button type="button" class="chip" id="clear-filters">Limpiar filtros</button>

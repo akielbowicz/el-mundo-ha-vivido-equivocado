@@ -280,8 +280,6 @@ function generateIndex(textos) {
           <li><a href="/">Inicio</a></li>
           <li><a href="/episodios/">Episodios</a></li>
           <li><a href="/textos/" aria-current="page">Textos</a></li>
-          <li><a href="/sobre/">Sobre el programa</a></li>
-          <li><a href="/contacto/">Sugerir un cuento</a></li>
         </ul>
       </nav>
       <div class="search-container" role="search">
