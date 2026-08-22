@@ -59,7 +59,7 @@ new-texto:
 check-epub: build
     node scripts/check-epub.mjs
 
-# Run all checks
+# Playwright smoke test against dist/ (serves pages, checks console/module errors)
 check-js: build
     node scripts/check-js.mjs
 
