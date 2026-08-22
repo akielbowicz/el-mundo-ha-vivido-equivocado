@@ -6,12 +6,21 @@ Built with [Squint](https://github.com/squint-cljs/squint) — Clojure syntax co
 
 | just target | what it does |
 |-------------|-------------|
-| `just build` | compile squint src, build episodios, textos, EPUB, org pages, copy assets → `dist/` |
+| `just build` | compile squint src, build episodios, textos, EPUB, org pages, show, sitemap, programa → `dist/` |
 | `just serve` | build + serve on `http://localhost:8080` |
 | `just watch` | recompile squint on file changes |
+| `just check-html` | validate semantic HTML + Firefox Reader Mode compatibility |
+| `just check-a11y` | a11y audit (html-validate WCAG rules) against the built site |
+| `just check-epub` | validate EPUBs in `dist/textos/` with epubcheck-ts |
+| `just check-js` | Playwright smoke test against `dist/` (console/module errors) |
+| `just check-tests` | unit tests for the build pipeline (`node --test`) |
+| `just check` | run all checks: check-html + check-a11y + check-js + check-epub + check-tests |
 | `just new-episode` | scaffold a new episode markdown file |
 | `just new-texto` | scaffold a new texto markdown file |
-| `just check` | run all validation checks |
+| `just publish-episodio` | publish next recording from `materiales/programas/` as a GitHub Release |
+| `just download-stream ARGS="--duration N"` | record the radio stream with ffmpeg |
+| `just to-mp3 ARGS` | convert audio files to MP3 (V0) |
+| `just build-show` | build grilla pages (HTML + PDF) into `dist/_show/` |
 | `just clean` | remove `dist/` and `node_modules/` |
 
 ## Textos workflow
