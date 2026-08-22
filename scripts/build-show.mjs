@@ -95,7 +95,7 @@ function main() {
     const htmlOut = join(outDir, "index.html");
     try {
       execSync(
-        `pandoc "${orgPath}" -f org -t html5 --standalone --template "${HTML_TEMPLATE}" -o "${htmlOut}"`,
+        `pandoc "${orgPath}" -f org -t html5 --shift-heading-level-by=1 --standalone --template "${HTML_TEMPLATE}" -o "${htmlOut}"`,
         { stdio: "pipe" }
       );
       console.log(`  ✓ ${slug}/index.html`);

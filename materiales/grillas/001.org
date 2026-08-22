@@ -1,4 +1,4 @@
-#+TITLE: Grilla de programa — Episodio 1: El Aleph
+#+TITLE: Episodio 1: El Aleph
 #+DATE: 2026-08-06
 #+AUTHOR: Sasha
 
