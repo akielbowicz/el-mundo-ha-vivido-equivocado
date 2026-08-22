@@ -1,10 +1,17 @@
+"""OCR de grupos de fotos de un export de WhatsApp (tesseract) → books_ocr_raw.json.
+
+Uso: python ocr_books.py <dir-con-chat-e-imágenes>
+El dir debe contener 'WhatsApp Chat with EMHVE.txt' y las IMG-*.jpg.
+"""
 import re
 import json
 import subprocess
 import os
 import sys
 
-DIR = "/var/home/sasha/Downloads/WhatsApp Chat with EMHVE"
+DIR = sys.argv[1] if len(sys.argv) > 1 else ""
+if not os.path.isdir(DIR):
+    sys.exit("uso: python ocr_books.py <dir con 'WhatsApp Chat with EMHVE.txt' e IMG-*.jpg>")
 CHAT_FILE = os.path.join(DIR, "WhatsApp Chat with EMHVE.txt")
 
 # Parse chat log to extract photo groups
@@ -73,7 +80,7 @@ for i, group in enumerate(groups):
     books.append(book_data)
 
 # Save raw OCR output
-output_path = os.path.join(DIR, "books_ocr_raw.json")
+output_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "books_ocr_raw.json")
 with open(output_path, "w", encoding="utf-8") as f:
     json.dump(books, f, ensure_ascii=False, indent=2)
 

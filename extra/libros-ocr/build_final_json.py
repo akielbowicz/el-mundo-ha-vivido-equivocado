@@ -1,8 +1,18 @@
+"""Combine raw OCR output with manually identified book titles → books_index.json.
+
+Uso: python build_final_json.py [input.json] [output.json]
+Defaults: books_ocr_raw.json → books_index.json (junto a este script).
+"""
 import json
+import os
 import re
+import sys
+
+DIR = os.path.dirname(os.path.abspath(__file__))
 
 # Read raw OCR data
-with open("/var/home/sasha/Downloads/WhatsApp Chat with EMHVE/books_ocr_raw.json", "r") as f:
+input_path = sys.argv[1] if len(sys.argv) > 1 else os.path.join(DIR, "books_ocr_raw.json")
+with open(input_path, "r") as f:
     raw_books = json.load(f)
 
 def clean_index_text(text):
@@ -109,7 +119,7 @@ for i, raw in enumerate(raw_books):
     final_books.append(book_info)
 
 # Save final JSON
-output_path = "/var/home/sasha/Downloads/WhatsApp Chat with EMHVE/books_index.json"
+output_path = sys.argv[2] if len(sys.argv) > 2 else os.path.join(DIR, "books_index.json")
 with open(output_path, "w", encoding="utf-8") as f:
     json.dump(final_books, f, ensure_ascii=False, indent=2)
 
