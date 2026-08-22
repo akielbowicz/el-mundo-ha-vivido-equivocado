@@ -4,10 +4,13 @@
 Sitio web del programa de radio **"El mundo ha vivido equivocado"** donde leemos cuentos y comentamos la experiencia de la lectura.
 
 ## Tech Stack
-- **Build:** Squint (Clojure → vanilla JS) + justfile
+- **Interactividad:** Squint (ClojureScript → vanilla JS) — player, búsqueda
+- **Build pipeline:** Node `.mjs` (scripts/) orquestado con justfile
+- **Audio:** Bash (`scripts/download-*`, `to-mp3`, `trim-audio`, `separate-vocals` con Demucs via uv)
+- **OCR / extracción:** Python stdlib (`scripts/textos-from-images.py` con Gemini/OpenRouter, `extra/libros-ocr/`)
 - **Deploy:** GitHub Actions → Pages (actions/deploy-pages@v4)
 - **DNS:** Cloudflare (proxy naranja), delegado nic.ar
-- **Validation:** html-validate, check-reader-mode.mjs, lefthook
+- **Validation:** html-validate, check-reader-mode.mjs, check-js.mjs (Playwright), lefthook
 - **Issue tracking:** beads (bd)
 - **Spec management:** OpenSpec
 
@@ -16,7 +19,8 @@ Sitio web del programa de radio **"El mundo ha vivido equivocado"** donde leemos
 ### Code Style
 - HTML semántico completo, renderizado en servidor (no JS-dependiente)
 - CSS con variables, diseño responsive mobile-first
-- Clojure/Squint para lógica de realce (no para generar contenido)
+- ClojureScript/Squint para lógica de realce (no para generar contenido)
+- Contenido en Markdown (.md) y org-mode (.org) compilado a HTML en el build
 - Markdown con frontmatter para contenido de episodios
 
 ### Architecture Patterns
