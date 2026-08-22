@@ -26,7 +26,10 @@ Keep this managed block so 'openspec update' can refresh the instructions.
 
 | Layer | Tool |
 |-------|------|
-| Language | Clojure (via [Squint](https://github.com/squint-cljs/squint)) → vanilla JS |
+| Interactividad | ClojureScript (via [Squint](https://github.com/squint-cljs/squint)) → vanilla JS |
+| Build pipeline | Node `.mjs` (scripts/) orquestado con `just` |
+| Audio | Bash (`scripts/download-*`, `to-mp3`, `trim-audio`, `separate-vocals`) |
+| OCR / extracción | Python (`scripts/textos-from-images.py`, `extra/libros-ocr/`) |
 | Build | `just build` (compile squint → `dist/`) |
 | Serve | `just serve` (serve on :8080) |
 | Lint / a11y | `html-validate` + `check-reader-mode.mjs` |
@@ -37,49 +40,82 @@ Keep this managed block so 'openspec update' can refresh the instructions.
 ## Project structure
 
 ```
-├── src/core.cljs          # entrada squint → dist/core.mjs
+├── src/
+│   ├── core.cljs          # entrada squint → dist/core.js
+│   ├── search.js          # búsqueda client-side (JS nativo, no pasa por squint)
+│   └── search.test.mjs    # tests de search
 ├── resources/
-│   ├── index.html         # HTML semántico completo (lector modo-ready)
+│   ├── index.html         # HTML semántico completo (reader-mode-ready)
+│   ├── 404.html
 │   ├── style.css          # estilos a11y, responsive, prefers-reduced-motion
+│   ├── libros-index.json
+│   ├── images/            # SVGs (og-default, portadas de episodios)
 │   └── CNAME              # dominio principal (equivocadxs.ar)
 ├── scripts/
 │   ├── build-episodes.mjs    # episodios/*.md → HTML
 │   ├── build-textos.mjs      # textos/*.md → HTML + search-index
 │   ├── build-epub.mjs        # textos/*.md → EPUB
 │   ├── build-org-pages.mjs   # .org pages → HTML
+│   ├── build-programa.mjs    # programa/*.org → páginas de programa
+│   ├── build-show.mjs        # materiales/grillas/*.org → dist/_show/ (HTML + PDF)
+│   ├── build-sitemap.mjs     # sitemap.xml
+│   ├── org-to-html.mjs       # conversor org → HTML (+ org-to-html.test.mjs)
+│   ├── lib/utils.mjs         # utilidades compartidas del pipeline (+ utils.test.mjs)
 │   ├── episode-template.html # template HTML para episodios
 │   ├── texto-template.html   # template HTML para textos
 │   ├── org-template.html     # template HTML para páginas .org
+│   ├── show-template.html    # template HTML para grillas del show
+│   ├── global-player.html    # player global que inyecta inject-player.mjs
 │   ├── new-episode.mjs       # scaffolder interactivo para episodios
 │   ├── new-texto.mjs         # scaffolder interactivo para textos
-│   ├── inject-player.mjs     # inyecta global player en HTML
+│   ├── inject-player.mjs     # inyecta global player en el HTML buildeado
 │   ├── check-reader-mode.mjs # valida compatibilidad con Firefox Reader Mode
+│   ├── check-js.mjs          # smoke test Playwright sobre dist/
 │   ├── check-epub.mjs        # valida EPUBs con epubcheck-ts
-│   └── a11y-audit.mjs        # html-validate con reglas a11y sobre el built
-├── textos/                  # textos fuente (.md con frontmatter)
+│   ├── a11y-audit.mjs        # html-validate con reglas a11y sobre el built
+│   ├── textos-from-images.py # OCR (Gemini via OpenRouter): imágenes → textos/*.md
+│   ├── download-audio        # bash: YouTube → WAV lossless
+│   ├── download-stream       # bash: graba stream de radio con ffmpeg (cron-friendly)
+│   ├── to-mp3                # bash: audio → MP3 V0
+│   ├── trim-audio            # bash: corta segmento → MP3
+│   ├── separate-vocals       # bash: separa voces/instrumental (Demucs)
+│   └── publish-episodio      # bash: publica grabación como GitHub Release
 ├── episodios/               # episodios fuente (.md con frontmatter)
-├── dist/                  # build output (gitignored)
-├── squint.edn             # config squint
-├── lefthook.yml           # pre-commit + pre-push hooks
-├── .htmlvalidate.json     # reglas de validación HTML + a11y
-├── justfile               # build, serve, check, clean
+├── textos/                  # textos fuente (.md con frontmatter)
+├── materiales/              # material del programa (raw/, programas/, grillas/; parte gitignoreada)
+├── programa/                # .org: cronograma y cuentos
+├── docs/                    # notas internas (copyright-review, workflow-programa)
+├── extra/libros-ocr/        # OCR one-off de libros (Python)
+├── dist/                    # build output (gitignored)
+├── squint.edn               # config squint
+├── lefthook.yml             # pre-commit + pre-push hooks
+├── .htmlvalidate.json       # reglas de validación HTML + a11y
+├── justfile                 # build, serve, checks, scaffolders, audio
 ├── .github/workflows/deploy.yml
-└── AGENTS.md              # este archivo
+└── AGENTS.md                # este archivo
 ```
 
 ## Commands
 
 | `just ...` | qué hace |
 |------------|----------|
-| `build` | npm install → squint compile → episodios → textos → EPUB → org pages → CNAME → player |
+| `build` | npm install → squint compile + esbuild → episodios → textos → EPUB → org pages → show → CNAME → player → sitemap → programa → materiales/raw |
 | `serve` | build + sirve en http://localhost:8080 |
 | `watch` | recompila squint al cambiar src/ |
 | `check-html` | valida HTML semántico + compatibilidad con Reader Mode |
 | `check-a11y` | html-validate con reglas a11y sobre el built |
 | `check-epub` | valida EPUBs en dist/textos/ con epubcheck-ts |
-| `check` | todos los checks |
+| `check-js` | smoke test Playwright: sirve dist/, carga páginas, detecta errores de JS |
+| `check-tests` | unit tests del pipeline (node --test) |
+| `check` | todos los checks: check-html + check-a11y + check-js + check-epub + check-tests |
 | `new-episode` | scaffolder interactivo para nuevo episodio |
 | `new-texto` | scaffolder interactivo para nuevo texto |
+| `publish-episodio` | publica próxima grabación de materiales/programas/ como GitHub Release |
+| `download-stream` | graba stream de radio (default 1h; `ARGS="--duration N"`) |
+| `to-mp3` | convierte audio a MP3 V0 |
+| `build-show` | construye páginas de grillas (HTML + PDF) en dist/_show/ |
+| `clean-show` | rm -rf dist/_show/ |
+| `clean-org-pages` | borra páginas .org generadas antes de rebuild |
 | `clean` | rm -rf dist node_modules |
 
 ## Lefthook hooks
@@ -87,7 +123,7 @@ Keep this managed block so 'openspec update' can refresh the instructions.
 | Hook | Comandos |
 |------|----------|
 | `pre-commit` | `html-validate` + `check-reader-mode` en paralelo sobre files staged |
-| `pre-push` | `just build` → `html-validate dist/` → `a11y-audit` |
+| `pre-push` | `just build` → `html-validate dist/index.html` → `a11y-audit` |
 
 ## CI/CD
 
@@ -106,8 +142,8 @@ Keep this managed block so 'openspec update' can refresh the instructions.
 ## Squint config
 
 - `squint.edn` con `:elide-imports false` — Squint emite imports, esbuild los resuelve al bundlear
-- `:copy-resources [:css :html]` — solo copia archivos .css y .html de `resources/` a `dist/`
-- Si se agrega un nuevo tipo de recurso (svg, json, fonts, imágenes), hay que añadirlo a `:copy-resources` en `squint.edn`
+- `:copy-resources [:css :html :svg]` — copia archivos .css, .html y .svg de `resources/` a `dist/`
+- Si se agrega un nuevo tipo de recurso (json, fonts, imágenes), hay que añadirlo a `:copy-resources` en `squint.edn`
 - `:extension ".mjs"` — modules ES
 
 ## Accessibility & Reader Mode
