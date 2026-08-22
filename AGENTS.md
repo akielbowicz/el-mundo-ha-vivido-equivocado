@@ -155,6 +155,7 @@ Keep this managed block so 'openspec update' can refresh the instructions.
 
 ## Notes
 
+- Los scripts Python del repo (`scripts/textos-from-images.py`, `extra/libros-ocr/`) usan solo stdlib — no requieren `requirements.txt`. Las dependencias pesadas (Demucs) se auto-instalan con `uv tool` desde `scripts/separate-vocals`
 - No borrar `package-lock.json` del repo (evita re-descargar todas las deps en cada CI run)
 - `just watch` recompila solo `.cljs` — cambios en `resources/` (HTML, CSS, CNAME) no se reflejan automáticamente. Usar `just build` manual o reiniciar watch
 - Para agregar interactividad: editar `src/core.cljs` → recompila solo

@@ -8,6 +8,7 @@ materiales/grabaciones/
 materiales/final/
 materiales/programas/
 separated/
+.venv/
 
 # Beads / Dolt files (added by bd init)
 .dolt/
