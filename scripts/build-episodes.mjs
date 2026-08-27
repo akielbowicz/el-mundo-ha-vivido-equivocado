@@ -6,7 +6,7 @@
  * Usage: node scripts/build-episodes.mjs
  */
 
-import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
+import { readFileSync, writeFileSync, mkdirSync, rmSync } from "node:fs";
 import { readdir } from "node:fs/promises";
 import { join } from "node:path";
 import { marked } from "marked";
@@ -54,6 +54,10 @@ function validateYouTube(url) {
 
 async function main() {
   const files = (await readdir(EPISODIOS_DIR)).filter(f => f.endsWith(".md"));
+
+  // Wipe previous output so renamed/retitled episodes don't leave ghost pages
+  // in dist/ and sitemap.xml
+  rmSync(join(DIST_DIR, "episodios"), { recursive: true, force: true });
   if (files.length === 0) {
     console.log("  No episode files found in episodios/");
     return;
