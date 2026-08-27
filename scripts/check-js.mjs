@@ -475,10 +475,97 @@ async function runTests() {
     }
   }
 
+  // Switching episodes must NOT resurrect the previous episode's position
+  // (stale sessionStorage restore re-firing on the new episode's
+  // loadedmetadata — full repro: play ep01 → seek → SPA nav → play ep02).
+  async function testEpisodeSwitchResetsTime() {
+    const ctx = await browser.newContext({ javaScriptEnabled: true });
+    const tab = await ctx.newPage();
+
+    try {
+      // 1. Play the first episode with audio
+      await tab.goto(`http://localhost:${PORT}/episodios/`, {
+        waitUntil: "networkidle",
+        timeout: 5000,
+      });
+      // Pick the OLDEST episode with audio so its prev/next link targets the
+      // other audio episode (list is date-desc)
+      const audioHrefs = await tab.evaluate(() =>
+        [...document.querySelectorAll("[data-filter-container] li")]
+          .filter((li) => li.querySelector(".badge-audio"))
+          .map((li) => li.querySelector("a[href^='/episodios/']")?.getAttribute("href"))
+      );
+      const epHref = audioHrefs[audioHrefs.length - 1];
+      if (!epHref) {
+        console.log("  ⚠  no episode with audio — skipping episode switch test");
+        return;
+      }
+      await tab.goto(`http://localhost:${PORT}${epHref}`, { waitUntil: "networkidle", timeout: 5000 });
+      await tab.click("[data-play-audio]");
+      await tab.waitForFunction(
+        () => {
+          const a = document.querySelector("#global-audio");
+          return a && isFinite(a.duration) && a.duration > 0;
+        },
+        { timeout: 10000 },
+      );
+
+      // 2. Seek to the middle so the old position is distinctive
+      await tab.$eval("#global-range", (el) => {
+        el.value = el.max / 2;
+        el.dispatchEvent(new Event("input", { bubbles: true }));
+        el.dispatchEvent(new Event("change", { bubbles: true }));
+      });
+      await tab.waitForTimeout(500);
+
+      // 3. SPA-navigate to another episode page (prev/next link) and play it
+      const otherHref = await tab.evaluate(() => {
+        const a = document.querySelector("a.prev, a.next");
+        return a ? a.getAttribute("href") : null;
+      });
+      if (!otherHref) {
+        console.log("  ⚠  no prev/next link — skipping episode switch test");
+        return;
+      }
+      await tab.click(`a[href="${otherHref}"]`);
+      await tab.waitForTimeout(1000);
+      const hasPlayBtn = await tab.$("[data-play-audio]");
+      if (!hasPlayBtn) {
+        console.log("  ⚠  target episode has no audio — skipping episode switch test");
+        return;
+      }
+      await tab.click("[data-play-audio]");
+
+      // 4. Give any stale restore a chance to fire
+      await tab.waitForTimeout(2500);
+      const ct = await tab.evaluate(() =>
+        document.querySelector("#global-audio").currentTime
+      );
+
+      if (ct < 10) {
+        console.log(`  ✅ episode switch resets time (ct=${ct.toFixed(1)}s)`);
+        passed++;
+      } else {
+        const msg = `switching episodes kept old position (ct=${ct.toFixed(1)}s, expected < 10s)`;
+        console.log(`  ❌ episode switch resets time — ${msg}`);
+        errors.push({ page: "episode switch", issues: [msg] });
+        failed++;
+      }
+    } catch (err) {
+      console.log(`  ❌ episode switch resets time — ${err.message}`);
+      errors.push({ page: "episode switch", issues: [err.message] });
+      failed++;
+    } finally {
+      await tab.close();
+      await ctx.close();
+    }
+  }
+
   await testAudioPersistence();
   await testNavLoader();
   await testEpisodeFilters();
   await testSeekBar();
+  await testEpisodeSwitchResetsTime();
 
   // Dynamically discover and test a texto detail page
   await (async function testTextoDetail() {

@@ -143,15 +143,24 @@
               (set! (.-textContent author-el) (or (.-author data) ""))
               (set! (.-hidden player-el) false)
               ;; Restore position once metadata is loaded — handle race
-              ;; by checking readyState before attaching listener
+              ;; by checking readyState before attaching listener.
+              ;; ONE-SHOT: the listener must be removed after firing, or it
+              ;; re-restores the OLD position every time the episode changes
+              ;; (load-audio swaps src → new loadedmetadata → stale restore).
               (let [restore (fn []
-                              (when (.-currentTime data)
-                                (set! (.-currentTime audio-el) (.-currentTime data)))
-                              (when (.-paused data)
-                                (.pause audio-el)))]
+                              ;; Skip if the user already switched to another
+                              ;; episode before this metadata arrived
+                              (when (.includes (.-currentSrc audio-el) (.-src data))
+                                (when (.-currentTime data)
+                                  (set! (.-currentTime audio-el) (.-currentTime data)))
+                                (when (.-paused data)
+                                  (.pause audio-el))))
+                    on-loaded (fn [_]
+                                (.removeEventListener audio-el "loadedmetadata" on-loaded)
+                                (restore))]
                 (if (>= (.-readyState audio-el) 1)
                   (restore)
-                  (.addEventListener audio-el "loadedmetadata" (fn [_] (restore)))))))))
+                  (.addEventListener audio-el "loadedmetadata" on-loaded)))))))
       (catch js/Error _ nil))
     (.addEventListener play-btn "click" (fn [_] (toggle-play)))
     (.addEventListener close-btn "click"
