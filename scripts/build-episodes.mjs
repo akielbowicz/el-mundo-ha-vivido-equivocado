@@ -276,11 +276,11 @@ function collectTags(episodes) {
 function generateChips(tags) {
   if (tags.length === 0) return "";
   const buttons = tags.map(t =>
-    `<button type="button" class="chip" data-tag="${t}" aria-pressed="false">#${formatTag(t)}</button>`
+    `<button type="button" class="chip" data-value="${t}" aria-pressed="false">#${formatTag(t)}</button>`
   ).join("\n          ");
   return `
       <div class="filter-chips" role="group" aria-label="Filtrar por etiqueta">
-        <button type="button" class="chip chip-active" data-tag="all" aria-pressed="true">Todos</button>
+        <button type="button" class="chip chip-active" data-value="all" aria-pressed="true">Todos</button>
           ${buttons}
       </div>`;
 }

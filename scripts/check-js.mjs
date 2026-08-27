@@ -270,8 +270,93 @@ async function runTests() {
     }
   }
 
+  // Episode filter chips: click a tag and verify real filtering happens.
+  // Regression guard: build-episodes once emitted data-tag instead of
+  // data-value, so chips silently did nothing while unit tests (stub-based)
+  // stayed green.
+  async function testEpisodeFilters() {
+    const ctx = await browser.newContext({ javaScriptEnabled: true });
+    const tab = await ctx.newPage();
+
+    try {
+      await tab.goto(`http://localhost:${PORT}/episodios/`, {
+        waitUntil: "networkidle",
+        timeout: 5000,
+      });
+
+      const total = await tab.evaluate(() =>
+        document.querySelectorAll("[data-filter-container] li").length
+      );
+      if (total === 0) {
+        console.log("  ⚠  no episodes in list — skipping filter test");
+        return;
+      }
+
+      // Pick the first non-"all" tag chip and its expected matches
+      const target = await tab.evaluate(() => {
+        const chip = document.querySelector('.filter-chips .chip:not([data-value="all"])');
+        if (!chip) return null;
+        const value = chip.dataset.value;
+        const expected = [...document.querySelectorAll("[data-filter-container] li")]
+          .filter((li) => (li.dataset.tags || "").split(" ").includes(value)).length;
+        return { value, expected };
+      });
+
+      if (!target) {
+        console.log("  ⚠  no tag chips found — skipping filter test");
+        return;
+      }
+
+      // Click the tag chip
+      await tab.click(`.filter-chips .chip[data-value="${target.value}"]`);
+      const afterTag = await tab.evaluate(({ sel, selAll }) => ({
+        visible: [...document.querySelectorAll("[data-filter-container] li")]
+          .filter((li) => li.style.display !== "none").length,
+        tagPressed: document.querySelector(sel)?.ariaPressed,
+        allPressed: document.querySelector(selAll)?.ariaPressed,
+      }), {
+        sel: `.filter-chips .chip[data-value="${target.value}"]`,
+        selAll: '.filter-chips .chip[data-value="all"]',
+      });
+
+      // Click "Todos" to reset
+      await tab.click('.filter-chips .chip[data-value="all"]');
+      const afterAll = await tab.evaluate(() =>
+        [...document.querySelectorAll("[data-filter-container] li")]
+          .filter((li) => li.style.display !== "none").length
+      );
+
+      const checks = [
+        { ok: target.expected > 0 && target.expected < total, msg: `tag "${target.value}" matches a strict subset (${target.expected}/${total})` },
+        { ok: afterTag.visible === target.expected, msg: `visible after tag click = ${target.expected} (got ${afterTag.visible})` },
+        { ok: afterTag.tagPressed === "true", msg: `tag chip aria-pressed after click (got "${afterTag.tagPressed}")` },
+        { ok: afterTag.allPressed === "false", msg: `"Todos" chip deactivated after tag click (got "${afterTag.allPressed}")` },
+        { ok: afterAll === total, msg: `"Todos" restores all ${total} (got ${afterAll})` },
+      ];
+
+      const allOk = checks.every((c) => c.ok);
+      if (allOk) {
+        console.log(`  ✅ episode filters (tag "${target.value}": ${target.expected}/${total})`);
+        passed++;
+      } else {
+        const failures = checks.filter((c) => !c.ok).map((c) => c.msg);
+        console.log(`  ❌ episode filters — ${failures.join("; ")}`);
+        errors.push({ page: "episode filters", issues: failures });
+        failed++;
+      }
+    } catch (err) {
+      console.log(`  ❌ episode filters — ${err.message}`);
+      errors.push({ page: "episode filters", issues: [err.message] });
+      failed++;
+    } finally {
+      await tab.close();
+      await ctx.close();
+    }
+  }
+
   await testAudioPersistence();
   await testNavLoader();
+  await testEpisodeFilters();
 
   // Dynamically discover and test a texto detail page
   await (async function testTextoDetail() {

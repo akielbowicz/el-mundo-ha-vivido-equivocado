@@ -116,6 +116,13 @@ function renderResults(results, el, index, queryTokens) {
 
 /* ── Filter chips ────────────────────────── */
 
+/** Normalized aria-pressed read: the ARIA reflection returns strings
+ *  ("true"/"false"), which are both truthy — never use bare `el.ariaPressed`
+ *  in boolean context. */
+function isPressed(chip) {
+  return chip.getAttribute("aria-pressed") === "true";
+}
+
 function groupByFilterType(chips) {
   // Partition chips by data-filter (tags, author, genre)
   // Episode chips have no data-filter — treat as "tags"
@@ -133,7 +140,7 @@ function getActiveTags(chips) {
   const tags = new Set();
   eachLoop(chips.length, i => {
     const b = chips[i];
-    if (b.ariaPressed && b.dataset.value !== "all") tags.add(b.dataset.value);
+    if (isPressed(b) && b.dataset.value !== "all") tags.add(b.dataset.value);
   });
   return tags;
 }
@@ -159,7 +166,7 @@ function applyFilter(chips, container, emptyEl) {
 
     // Apply tag filter (data-tags)
     if (groups.tags) {
-      const activeTags = groups.tags.filter(c => c.ariaPressed).map(c => c.dataset.value);
+      const activeTags = groups.tags.filter(c => isPressed(c) && c.dataset.value !== "all").map(c => c.dataset.value);
       if (activeTags.length > 0) {
         const itemTags = new Set((li.dataset.tags || "").split(" ").filter(Boolean));
         for (const t of activeTags) { if (!itemTags.has(t)) { ok = false; break; } }
@@ -168,7 +175,7 @@ function applyFilter(chips, container, emptyEl) {
 
     // Apply author filter (data-author)
     if (ok && groups.author) {
-      const activeAuthors = groups.author.filter(c => c.ariaPressed).map(c => c.dataset.value);
+      const activeAuthors = groups.author.filter(c => isPressed(c) && c.dataset.value !== "all").map(c => c.dataset.value);
       if (activeAuthors.length > 0) {
         const itemAuthor = li.dataset.author || "";
         if (!activeAuthors.includes(itemAuthor)) ok = false;
@@ -177,7 +184,7 @@ function applyFilter(chips, container, emptyEl) {
 
     // Apply genre filter (data-genre)
     if (ok && groups.genre) {
-      const activeGenres = groups.genre.filter(c => c.ariaPressed).map(c => c.dataset.value);
+      const activeGenres = groups.genre.filter(c => isPressed(c) && c.dataset.value !== "all").map(c => c.dataset.value);
       if (activeGenres.length > 0) {
         const itemGenre = li.dataset.genre || "";
         if (!activeGenres.includes(itemGenre)) ok = false;
@@ -206,7 +213,7 @@ function toggleChip(chip, chips, container, emptyEl) {
       }
     });
   } else {
-    const newp = !chip.ariaPressed;
+    const newp = !isPressed(chip);
     chip.ariaPressed = newp;
     if (newp) chip.classList.add("chip-active"); else chip.classList.remove("chip-active");
 
@@ -221,7 +228,7 @@ function toggleChip(chip, chips, container, emptyEl) {
 
     // If no chips of this type are active, reactivate "all"
     const anyActive = Array.from(chips).some(
-      b => (b.dataset.filter || "tags") === filterType && b.dataset.value !== "all" && b.ariaPressed
+      b => (b.dataset.filter || "tags") === filterType && b.dataset.value !== "all" && isPressed(b)
     );
     if (!anyActive) {
       eachLoop(chips.length, i => {

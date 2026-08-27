@@ -13,15 +13,23 @@ import assert from "node:assert/strict";
 /* ── Minimal DOM stubs ─────────────────── */
 
 function makeStubChip(value, filterType, pressed = false) {
-  return {
+  const chip = {
     dataset: { value, filter: filterType || "" },
-    ariaPressed: pressed,
+    // Mirror the ARIA reflection: `ariaPressed` reads back as the STRING
+    // "true"/"false", no matter what was written (boolean or string).
+    _pressed: pressed ? "true" : "false",
+    getAttribute(name) { return name === "aria-pressed" ? this._pressed : null; },
     classList: {
       add(name) { this._classes = this._classes || []; this._classes.push(name); },
       remove(name) { this._classes = this._classes || []; this._classes = this._classes.filter(c => c !== name); },
       contains(name) { return (this._classes || []).includes(name); },
     },
   };
+  Object.defineProperty(chip, "ariaPressed", {
+    get() { return this._pressed; },
+    set(v) { this._pressed = v && v !== "false" ? "true" : "false"; },
+  });
+  return chip;
 }
 
 function makeStubContainer(initialItems = []) {
@@ -43,6 +51,10 @@ function makeStubEmptyEl() {
 
 // Replicate the search.js filter logic as pure functions for testing
 // This mirrors the logic in search.js exactly
+
+function isPressed(chip) {
+  return chip.getAttribute("aria-pressed") === "true";
+}
 
 function groupByFilterType(chips) {
   const groups = {};
@@ -76,7 +88,7 @@ function applyFilter(chips, container, emptyEl) {
 
     // Apply tag filter
     if (groups.tags) {
-      const activeTags = groups.tags.filter(c => c.ariaPressed).map(c => c.dataset.value);
+      const activeTags = groups.tags.filter(c => isPressed(c) && c.dataset.value !== "all").map(c => c.dataset.value);
       if (activeTags.length > 0) {
         const itemTags = new Set((li.dataset.tags || "").split(" ").filter(Boolean));
         for (const t of activeTags) { if (!itemTags.has(t)) { ok = false; break; } }
@@ -85,7 +97,7 @@ function applyFilter(chips, container, emptyEl) {
 
     // Apply author filter
     if (ok && groups.author) {
-      const activeAuthors = groups.author.filter(c => c.ariaPressed).map(c => c.dataset.value);
+      const activeAuthors = groups.author.filter(c => isPressed(c) && c.dataset.value !== "all").map(c => c.dataset.value);
       if (activeAuthors.length > 0) {
         const itemAuthor = li.dataset.author || "";
         if (!activeAuthors.includes(itemAuthor)) ok = false;
@@ -94,7 +106,7 @@ function applyFilter(chips, container, emptyEl) {
 
     // Apply genre filter
     if (ok && groups.genre) {
-      const activeGenres = groups.genre.filter(c => c.ariaPressed).map(c => c.dataset.value);
+      const activeGenres = groups.genre.filter(c => isPressed(c) && c.dataset.value !== "all").map(c => c.dataset.value);
       if (activeGenres.length > 0) {
         const itemGenre = li.dataset.genre || "";
         if (!activeGenres.includes(itemGenre)) ok = false;
@@ -122,7 +134,7 @@ function toggleChip(chip, chips, container, emptyEl) {
       }
     }
   } else {
-    const newp = !chip.ariaPressed;
+    const newp = !isPressed(chip);
     chip.ariaPressed = newp;
     if (newp) chip.classList.add("chip-active"); else chip.classList.remove("chip-active");
 
@@ -137,7 +149,7 @@ function toggleChip(chip, chips, container, emptyEl) {
 
     // If no chips of this type are active, reactivate "all"
     const anyActive = Array.from(chips).some(
-      b => (b.dataset.filter || "tags") === filterType && b.dataset.value !== "all" && b.ariaPressed
+      b => (b.dataset.filter || "tags") === filterType && b.dataset.value !== "all" && isPressed(b)
     );
     if (!anyActive) {
       for (let i = 0; i < chips.length; i++) {
@@ -196,8 +208,8 @@ describe("toggleChip", () => {
 
     toggleChip(chip, chips, container, emptyEl);
 
-    assert.equal(chip.ariaPressed, true);
-    assert.equal(all.ariaPressed, false);
+    assert.equal(chip.ariaPressed, "true");
+    assert.equal(all.ariaPressed, "false");
   });
 
   it("deactivates a chip and reactivates 'all' when none active", () => {
@@ -209,8 +221,8 @@ describe("toggleChip", () => {
 
     toggleChip(chip, chips, container, emptyEl);
 
-    assert.equal(chip.ariaPressed, false);
-    assert.equal(all.ariaPressed, true);
+    assert.equal(chip.ariaPressed, "false");
+    assert.equal(all.ariaPressed, "true");
   });
 
   it("handles 'all' chip click: activates all, deactivates others", () => {
@@ -223,9 +235,9 @@ describe("toggleChip", () => {
 
     toggleChip(all, chips, container, emptyEl);
 
-    assert.equal(all.ariaPressed, true);
-    assert.equal(chip1.ariaPressed, false);
-    assert.equal(chip2.ariaPressed, false);
+    assert.equal(all.ariaPressed, "true");
+    assert.equal(chip1.ariaPressed, "false");
+    assert.equal(chip2.ariaPressed, "false");
   });
 });
 
@@ -238,6 +250,29 @@ describe("applyFilter", () => {
     ]);
     const emptyEl = makeStubEmptyEl();
 
+    applyFilter(chips, container, emptyEl);
+
+    assert.equal(container.items[0].style.display, "");
+    assert.equal(container.items[1].style.display, "");
+  });
+
+  it("ignores the 'all' chip value as a filter (regression: 'Todos' left 0 visible)", () => {
+    const chips = [makeStubChip("all", "tags", true), makeStubChip("realismo", "tags", false)];
+    const container = makeStubContainer([{ tags: "realismo" }, { tags: "fantasia" }]);
+    const emptyEl = makeStubEmptyEl();
+
+    applyFilter(chips, container, emptyEl);
+
+    assert.equal(container.items[0].style.display, "");
+    assert.equal(container.items[1].style.display, "");
+  });
+
+  it("treats aria-pressed='false' (string) as not pressed (regression: ARIA reflection truthiness)", () => {
+    const chips = [makeStubChip("all", "tags", false), makeStubChip("realismo", "tags", false)];
+    const container = makeStubContainer([{ tags: "realismo" }, { tags: "fantasia" }]);
+    const emptyEl = makeStubEmptyEl();
+
+    // Both chips read back ariaPressed as the STRING "false" — truthy in JS.
     applyFilter(chips, container, emptyEl);
 
     assert.equal(container.items[0].style.display, "");
@@ -344,8 +379,8 @@ describe("clearFilters", () => {
 
     clearFilters(chips, container, emptyEl);
 
-    assert.equal(all.ariaPressed, true);
-    assert.equal(chip.ariaPressed, false);
+    assert.equal(all.ariaPressed, "true");
+    assert.equal(chip.ariaPressed, "false");
   });
 });
 
