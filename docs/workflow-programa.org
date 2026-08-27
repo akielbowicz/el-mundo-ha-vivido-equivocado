@@ -75,12 +75,26 @@ Al pushear a ~main~:
 2. ~scripts/build-programa.mjs~:
    - Busca archivos en ~materiales/programas/~ (locales)
    - Si no hay locales (caso CI), descarga assets desde GitHub Releases
-   - Copia los audios a ~dist/programa/~
-   - Genera ~dist/programa/index.html~ con reproductor ~<audio>~ por episodio
-3. El site depliega a GitHub Pages
+   - Copia los audios a ~dist/programa/~ (mismas URLs de siempre:
+     ~/programa/NNN-....mp3~)
+   - Convierte ~dist/programa/index.html~ en un redirect (con ~noindex~)
+     hacia ~/episodios/~
+3. ~scripts/build-episodes.mjs~ descubre la grabación de cada episodio por
+   número (~001-casas-hecker.md~ → release ~episodio-001~) y embebe el
+   reproductor en la página del episodio (bloque ~{{#audio}}~ del template:
+   botón "▶ Reproducir" al player global + descarga + badge "🎧 Audio" en el
+   listado)
+4. El site depliega a GitHub Pages
 
-La página vive en https://equivocadxs.ar/programa/ (sin link en la
-navegación principal — solo accesible por URL directa).
+El reproductor de cada programa vive en su página de episodio
+(https://equivocadxs.ar/episodios/), no hay página de listado separada.
+El frontmatter ~audio:~ explícito tiene precedencia sobre la grabación
+descubierta.
+
+Nota: un release publicado sin ~.md~ de episodio correspondiente queda sin
+página que lo linkee — es esperado: el audio se publica cuando la página
+está lista (el flujo normal es crear el ~.md~ primero, ~just publish-episodio~
+después).
 
 ** 5. Scripts involucrados
 
@@ -88,7 +102,8 @@ navegación principal — solo accesible por URL directa).
 |--------|----------|-----|
 | ~scripts/download-stream~ | bash | Graba stream vía ffmpeg |
 | ~scripts/publish-episodio~ | bash | Publica en GitHub Releases (requiere ~gh~ CLI) |
-| ~scripts/build-programa.mjs~ | Node.js | Genera página /programa/ con players |
+| ~scripts/build-programa.mjs~ | Node.js | Copia/descarga audios a dist/programa/ + redirect de /programa/ |
+| ~scripts/lib/programa-audio.mjs~ | Node.js | Descubrimiento compartido de grabaciones (match por número) |
 
 ** 6. Archivos y directorios
 
@@ -97,7 +112,7 @@ navegación principal — solo accesible por URL directa).
 | ~materiales/grabaciones/~ | Grabaciones raw (stream completo) | Ignorado |
 | ~materiales/programas/~ | Archivos editados (con -dur) | Ignorado |
 | ~materiales/raw/~ | Otros assets de audio | Ignorado |
-| ~dist/programa/~ | Output del build (copia de audios + página) | Ignorado |
+| ~dist/programa/~ | Output del build (copia de audios + redirect) | Ignorado |
 | ~.gitignore~ | Ignora ~grabaciones/~, ~programas/~, ~final/~ | Trackeado |
 | ~.config/systemd/user/download-stream.*~ | Timer + service systemd | Fuera del repo |
 

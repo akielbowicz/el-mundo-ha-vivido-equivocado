@@ -12,6 +12,7 @@ import { join } from "node:path";
 import { marked } from "marked";
 import yaml from "gray-matter";
 import { slugify, formatDate, renderTemplate, formatTag } from "./lib/utils.mjs";
+import { findProgramaAudio, episodeNumberFromFile } from "./lib/programa-audio.mjs";
 
 // Shift markdown headings down one level (h1→h2, h2→h3, etc.)
 // so the page <h1> is the episode title from frontmatter.
@@ -137,6 +138,16 @@ async function main() {
       ? fm.authors.join(", ")
       : fm.authors;
 
+    // Audio: frontmatter explícito gana; fallback = grabación de programa
+    // descubierta por número (local en materiales/ o release de GitHub).
+    // Fallo de descubrimiento → sin audio, nunca rompe el build.
+    let audio = fm.audio || "";
+    if (!audio) {
+      const num = episodeNumberFromFile(file);
+      const recording = await findProgramaAudio({ num });
+      if (recording) audio = recording.url;
+    }
+
     const ctx = {
       title: fm.title,
       description: fm.description,
@@ -149,7 +160,7 @@ async function main() {
       authors,
       duration: fm.duration || "",
       genre: fm.genre || "",
-      audio: fm.audio || "",
+      audio,
       youtube: fm.youtube ? true : false,
       youtube_id: youtubeId || "",
       image: fm.image || "",
@@ -171,7 +182,7 @@ async function main() {
       authors,
       duration: fm.duration || "",
       genre: fm.genre || "",
-      audio: !!fm.audio,
+      audio: !!audio,
       youtube: !!fm.youtube,
       image: fm.image || "",
       tags: fm.tags || [],
@@ -341,7 +352,6 @@ function generateIndex(episodes) {
       ${chips}
       <ul class="episode-list" data-filter-container>${items}
       </ul>
-      <p class="programa-link"><a href="/programa/">Escuchá los programas completos →</a></p>
       <div class="filter-empty" data-filter-empty style="display:none">
         <p>No hay episodios con estos filtros.</p>
         <button type="button" class="chip" id="clear-filters">Limpiar filtros</button>
