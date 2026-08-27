@@ -10,7 +10,7 @@ import { createInterface } from "node:readline";
 import { writeFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
 
-const EPISODIOS_DIR = "episodios";
+const EPISODIOS_DIR = "sitio/episodios";
 
 const rl = createInterface({
   input: process.stdin,

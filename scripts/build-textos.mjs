@@ -22,7 +22,7 @@ const renderer = {
 };
 marked.use({ renderer });
 
-const TEXTOS_DIR = "textos";
+const TEXTOS_DIR = "sitio/textos";
 const DIST_DIR = "dist";
 const SITE_URL = "https://equivocadxs.ar";
 const DEFAULT_OG_IMAGE = `${SITE_URL}/images/og-default.svg`;

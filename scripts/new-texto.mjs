@@ -10,7 +10,7 @@ import { createInterface } from "node:readline";
 import { writeFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
 
-const TEXTOS_DIR = "textos";
+const TEXTOS_DIR = "sitio/textos";
 
 const rl = createInterface({
   input: process.stdin,

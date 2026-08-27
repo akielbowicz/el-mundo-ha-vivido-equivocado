@@ -15,7 +15,7 @@ import yaml from "gray-matter";
 import Epub from "epub-gen";
 import { slugify } from "./lib/utils.mjs";
 
-const TEXTOS_DIR = "textos";
+const TEXTOS_DIR = "sitio/textos";
 const DIST_DIR = "dist";
 const EPUB_DIR = join(DIST_DIR, "textos");
 
