@@ -7,7 +7,7 @@ TBD - created by archiving change add-markdown-episodes. Update Purpose after ar
 The system SHALL compile Markdown files with frontmatter into static HTML pages.
 
 #### Scenario: Build processes episode directory
-- **GIVEN** a directory `episodios/` with `.md` files
+- **GIVEN** a directory `sitio/episodios/` with `.md` files
 - **WHEN** `just build` runs
 - **THEN** each `.md` file is compiled to `dist/episodios/<slug>/index.html`
 - **AND** invalid frontmatter causes the build to fail
