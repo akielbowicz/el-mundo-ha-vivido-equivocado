@@ -9,20 +9,9 @@
  * Refresca cada minuto mientras la pestaña está visible.
  */
 
-import { nextBroadcast, SHOW } from "./live-schedule.mjs";
+import { nextBroadcast, formatNextEmission, formatCountdown, isSameLocalDay } from "./live-schedule.mjs";
 
 const REFRESH_MS = 60_000;
-
-function formatLocal(date) {
-  // weekday + hora en la zona del visitante, con el DST vigente de ESA fecha.
-  // Locale fijo "es": el sitio es en español sin importar el locale del browser.
-  const fmt = new Intl.DateTimeFormat("es", {
-    weekday: "long",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-  return fmt.format(date);
-}
 
 function visitorTimezone() {
   try {
@@ -46,13 +35,19 @@ function render() {
     textEl.textContent = "Estamos en el aire — escuchanos ahora";
   } else {
     banner.setAttribute("data-state", "next");
-    const local = formatLocal(startsAt);
+    const now = new Date();
     const tz = visitorTimezone();
     // si el visitante ya está en Argentina, la hora local ES la de referencia
     const inArgentina = tz.startsWith("America/Argentina") || tz === "America/Buenos_Aires";
-    textEl.textContent = inArgentina
-      ? `Próxima emisión: ${local}`
-      : `Próxima emisión: ${local} — jueves 19:00 en Buenos Aires`;
+    if (isSameLocalDay(now, startsAt)) {
+      // emisión HOY (p. ej. jueves en Argentina antes de las 19)
+      textEl.textContent = `¡Hoy! Próxima emisión en ${formatCountdown(startsAt, now)} hs`;
+    } else {
+      const fecha = formatNextEmission(startsAt);
+      textEl.textContent = inArgentina
+        ? `Próxima emisión: ${fecha}`
+        : `${fecha} (tu hora) — jueves 19:00 en Buenos Aires`;
+    }
   }
 }
 

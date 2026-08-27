@@ -1114,20 +1114,20 @@ footer {
 /* ── Live Banner ─────────────────────── */
 
 .live-banner {
-  border-top: 1px solid var(--color-border, #e0ddd5);
   border-bottom: 1px solid var(--color-border, #e0ddd5);
-  background: var(--color-bg);
+  background: var(--color-accent);
+  color: #fff;
   font-family: var(--font-ui);
+  font-size: 0.9rem;
 }
 
 .live-banner a {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.6rem 0;
-  color: var(--color-text);
+  padding: 0.55rem 0;
+  color: inherit;
   text-decoration: none;
-  font-size: 0.9rem;
 }
 
 .live-banner a:hover .live-text,
@@ -1140,20 +1140,11 @@ footer {
   width: 0.6rem;
   height: 0.6rem;
   border-radius: 50%;
-  background: var(--color-muted);
-}
-
-.live-banner[data-state="live"] {
-  background: var(--color-accent);
-}
-
-.live-banner[data-state="live"] a {
-  color: #fff;
-  font-weight: 600;
+  background: #fff;
+  opacity: 0.85;
 }
 
 .live-banner[data-state="live"] .live-dot {
-  background: #fff;
   animation: live-pulse 1.5s ease-in-out infinite;
 }
 

@@ -29,15 +29,31 @@ async function findHtmlFiles(dir) {
 async function main() {
   const files = await findHtmlFiles(DIST_DIR);
   let count = 0;
+
+  // Fecha concreta de la próxima emisión, calculada en build time, para que
+  // también los visitantes sin JS la vean (JS la recalcula en runtime).
+  const { nextBroadcast, formatNextEmission } = await import("../src/live-schedule.js");
+  const { startsAt } = nextBroadcast(new Date());
+  const fecha = formatNextEmission(startsAt, {
+    timeZone: "America/Argentina/Buenos_Aires",
+  });
+  const fechaCap = fecha.charAt(0).toUpperCase() + fecha.slice(1);
+  const STATIC_TEXT = "Jueves 19:00 (UTC-3) — escuchanos en vivo";
+  const BAKED_TEXT = `${fechaCap} (Argentina) — escuchanos en vivo`;
+
   for (const file of files) {
     const content = readFileSync(file, "utf-8");
+    let updated = content;
+    if (content.includes(STATIC_TEXT)) {
+      updated = updated.replaceAll(STATIC_TEXT, BAKED_TEXT);
+    }
     if (content.includes("{{GLOBAL_PLAYER}}")) {
-      const updated = content.replace("{{GLOBAL_PLAYER}}", PLAYER_HTML);
-      if (updated !== content) {
-        writeFileSync(file, updated);
-        console.log(`  ✓ injected player into ${file.replace(DIST_DIR + "/", "")}`);
-        count++;
-      }
+      updated = updated.replace("{{GLOBAL_PLAYER}}", PLAYER_HTML);
+    }
+    if (updated !== content) {
+      writeFileSync(file, updated);
+      console.log(`  ✓ inyectado en ${file.replace(DIST_DIR + "/", "")}`);
+      count++;
     }
   }
   if (count === 0) {

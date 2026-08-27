@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { nextBroadcast, SHOW } from "./live-schedule.js";
+import { nextBroadcast, formatNextEmission, formatCountdown, isSameLocalDay, SHOW } from "./live-schedule.js";
 
 const d = (iso) => new Date(iso);
 
@@ -58,4 +58,37 @@ test("la hora local del visitante no afecta el cómputo UTC", () => {
 
 test("SHOW expone la URL de la radio", () => {
   assert.equal(SHOW.url, "https://suipacha.gob.ar/radio/");
+});
+
+const BA = { timeZone: "America/Argentina/Buenos_Aires" };
+
+test("formatNextEmission: fecha completa en español", () => {
+  const s = formatNextEmission(d("2026-08-27T22:00:00Z"), BA);
+  assert.match(s, /jueves/);
+  assert.match(s, /27 de agosto/);
+  assert.match(s, /19:00/);
+});
+
+test("formatNextEmission: respeta la zona horaria pedida", () => {
+  const s = formatNextEmission(d("2026-08-27T22:00:00Z"), { timeZone: "Asia/Tokyo" });
+  assert.match(s, /viernes/);
+  assert.match(s, /07:00/);
+});
+
+test("formatCountdown: horas y minutos paddeados", () => {
+  const start = d("2026-08-27T22:00:00Z");
+  assert.equal(formatCountdown(start, d("2026-08-27T19:30:00Z")), "02:30");
+  assert.equal(formatCountdown(start, d("2026-08-27T21:59:00Z")), "00:01");
+  assert.equal(formatCountdown(start, d("2026-08-27T12:00:00Z")), "10:00");
+});
+
+test("formatCountdown: nunca negativo", () => {
+  const start = d("2026-08-27T22:00:00Z");
+  assert.equal(formatCountdown(start, d("2026-08-27T23:00:00Z")), "00:00");
+});
+
+test("isSameLocalDay: mismo día local aunque cambie la hora", () => {
+  const now = d("2026-08-27T15:00:00Z");
+  assert.equal(isSameLocalDay(now, d("2026-08-27T03:00:00Z")), true);
+  assert.equal(isSameLocalDay(now, d("2026-08-28T15:00:00Z")), false);
 });

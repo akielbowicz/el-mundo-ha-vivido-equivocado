@@ -51,3 +51,37 @@ export function nextBroadcast(now = new Date(), opts = {}) {
   // now < start → emisión de esta semana aún no empieza
   return { status: "next", startsAt: start, endsAt: end };
 }
+
+/**
+ * Fecha completa de la emisión en español: "jueves, 27 de agosto, 19:00".
+ * Sin timeZone muestra la zona del visitante (runtime); el build puede pasar
+ * una fija (America/Argentina/Buenos_Aires).
+ */
+export function formatNextEmission(startsAt, opts = {}) {
+  const fmt = new Intl.DateTimeFormat("es", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    hour: "2-digit",
+    minute: "2-digit",
+    ...opts,
+  });
+  return fmt.format(startsAt);
+}
+
+/** Countdown "HH:MM" desde now hasta startsAt. */
+export function formatCountdown(startsAt, now = new Date()) {
+  const ms = Math.max(0, startsAt - now);
+  const hh = Math.floor(ms / 3_600_000);
+  const mm = Math.floor((ms % 3_600_000) / 60_000);
+  return `${String(hh).padStart(2, "0")}:${String(mm).padStart(2, "0")}`;
+}
+
+/** Misma fecha de calendario local (día/mes/año). */
+export function isSameLocalDay(a, b) {
+  return (
+    a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate()
+  );
+}
