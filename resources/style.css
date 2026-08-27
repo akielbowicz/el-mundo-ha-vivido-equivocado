@@ -516,6 +516,14 @@ footer {
   max-width: 70ch;
 }
 
+/* Markdown-embedded images never overflow the text column */
+.page-content img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 0 auto;
+}
+
 .page-content h2 {
   margin-top: 2rem;
 }
