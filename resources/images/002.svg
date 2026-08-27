@@ -11,21 +11,24 @@
     titulo      → título + autor (no mover de y=150/180 sin ajustar decoracion)
     badge       → número de episodio
 
-  Paleta del sitio (ver style.css):
-    fondo oscuro  #2c1810 → #4a2c20
-    acento oro    #c4a060 → #d4b070
-  Mantener contraste texto/fondo ≥ 4.5:1 (WCAG AA) si se cambia la paleta.
+  Paleta usada: terracota
+    fondo  #301b12 → #4a2a1c
+    acento #e0a888 → #eec0a4
+  Contraste texto/fondo: 9.8:1 (WCAG AA ≥ 4.5:1)
+  Otras: oro-clasico, verde-yerba, noche-azul, vino-tinto, violeta, cobalto, ambar, rosa-bajo, salvia, terracota
+  Forzar una: pasale "palette=<nombre>" al script new-cover.mjs
+  Mantener contraste ≥ 4.5:1 (WCAG AA) si se ajustan colores a mano.
 -->
 <svg xmlns="http://www.w3.org/2000/svg" xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape" viewBox="0 0 400 400" width="400" height="400">
   <title>Episodio 02</title>
   <defs>
     <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#2c1810"/>
-      <stop offset="100%" style="stop-color:#4a2c20"/>
+      <stop offset="0%" style="stop-color:#301b12"/>
+      <stop offset="100%" style="stop-color:#4a2a1c"/>
     </linearGradient>
     <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%" style="stop-color:#c4a060"/>
-      <stop offset="100%" style="stop-color:#d4b070"/>
+      <stop offset="0%" style="stop-color:#e0a888"/>
+      <stop offset="100%" style="stop-color:#eec0a4"/>
     </linearGradient>
   </defs>
 
@@ -44,12 +47,12 @@
   <g inkscape:groupmode="layer" id="decoracion" inkscape:label="decoracion">
     <circle cx="200" cy="220" r="80" fill="none" stroke="url(#accent)" stroke-width="1" opacity="0.15"/>
     <circle cx="200" cy="220" r="50" fill="none" stroke="url(#accent)" stroke-width="0.5" opacity="0.2"/>
-    <text x="200" y="330" text-anchor="middle" fill="#c4a060" font-family="sans-serif" font-size="14" opacity="0.3">✦ ✦ ✦</text>
+    <text x="200" y="330" text-anchor="middle" fill="#eec0a4" font-family="sans-serif" font-size="14" opacity="0.3">✦ ✦ ✦</text>
   </g>
 
   <g inkscape:groupmode="layer" id="titulo" inkscape:label="titulo">
     <text x="200" y="150" text-anchor="middle" fill="url(#accent)" font-family="Georgia, serif" font-size="22" font-weight="bold">Episodio 02</text>
-    <text x="200" y="180" text-anchor="middle" fill="#c4a060" font-family="Georgia, serif" font-size="11" opacity="0.7">Sasha, hebe-uhart, alberto-laiseca</text>
+    <text x="200" y="180" text-anchor="middle" fill="#eec0a4" font-family="Georgia, serif" font-size="11" opacity="0.7">Sasha, hebe-uhart, alberto-laiseca</text>
     <!--
       Si el título es largo, bajar font-size o partir en dos <text> (y=135 y y=160).
       El <title> del episodio tiene regla a11y: mantener textos legibles.

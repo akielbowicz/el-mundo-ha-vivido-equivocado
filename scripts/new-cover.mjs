@@ -160,7 +160,7 @@ const svg = `<?xml version="1.0" encoding="UTF-8"?>
     acento ${palette.accent.join(" → ")}
   Contraste texto/fondo: ${ratio.toFixed(1)}:1 (WCAG AA ≥ 4.5:1)
   Otras: ${PALETTES.map(p => p.name).join(", ")}
-  Forzar una: node scripts/new-cover.mjs ${num || "NNN"} --palette <nombre>
+  Forzar una: pasale "palette=<nombre>" al script new-cover.mjs
   Mantener contraste ≥ 4.5:1 (WCAG AA) si se ajustan colores a mano.
 -->
 <svg xmlns="http://www.w3.org/2000/svg" xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape" viewBox="0 0 400 400" width="400" height="400">
