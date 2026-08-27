@@ -25,30 +25,37 @@ function render() {
   const banner = document.querySelector("[data-live-banner]");
   if (!banner) return;
 
-  const textEl = banner.querySelector(".live-text");
-  if (!textEl) return;
+  const infoEl = banner.querySelector(".live-info");
+  const ctaEl = banner.querySelector(".live-cta");
+  const extraEl = banner.querySelector(".live-extra");
+  if (!infoEl || !ctaEl) return;
 
   const { status, startsAt } = nextBroadcast(new Date());
 
   if (status === "live") {
     banner.setAttribute("data-state", "live");
-    textEl.textContent = "Estamos en el aire — escuchanos ahora";
-  } else {
-    banner.setAttribute("data-state", "next");
-    const now = new Date();
-    const tz = visitorTimezone();
-    // si el visitante ya está en Argentina, la hora local ES la de referencia
-    const inArgentina = tz.startsWith("America/Argentina") || tz === "America/Buenos_Aires";
-    if (isSameLocalDay(now, startsAt)) {
-      // emisión HOY (p. ej. jueves en Argentina antes de las 19)
-      textEl.textContent = `¡Hoy! Próxima emisión en ${formatCountdown(startsAt, now)} hs`;
-    } else {
-      const fecha = formatNextEmission(startsAt);
-      textEl.textContent = inArgentina
-        ? `Próxima emisión: ${fecha}`
-        : `${fecha} (tu hora) — jueves 19:00 en Buenos Aires`;
-    }
+    infoEl.textContent = "Estamos en el aire";
+    ctaEl.textContent = "Escuchar ahora";
+    if (extraEl) extraEl.textContent = "";
+    return;
   }
+
+  banner.setAttribute("data-state", "next");
+  const now = new Date();
+  const tz = visitorTimezone();
+  // si el visitante ya está en Argentina, la hora local ES la de referencia
+  const inArgentina = tz.startsWith("America/Argentina") || tz === "America/Buenos_Aires";
+
+  if (isSameLocalDay(now, startsAt)) {
+    // emisión HOY (p. ej. jueves en Argentina antes de las 19)
+    infoEl.textContent = `¡Hoy! Próxima emisión en ${formatCountdown(startsAt, now)} hs`;
+  } else {
+    infoEl.textContent = `Próxima emisión: ${formatNextEmission(startsAt)}`;
+  }
+  if (extraEl) {
+    extraEl.textContent = inArgentina ? "" : "· 19:00 Buenos Aires";
+  }
+  ctaEl.textContent = "Escuchar en vivo";
 }
 
 function init() {
@@ -58,8 +65,11 @@ function init() {
   }, REFRESH_MS);
 }
 
-if (document.readyState === "loading") {
-  document.addEventListener("DOMContentLoaded", init);
-} else {
-  init();
+// no ejecutar el wiring DOM fuera del browser (p. ej. si algo lo importa en node)
+if (typeof document !== "undefined") {
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", init);
+  } else {
+    init();
+  }
 }

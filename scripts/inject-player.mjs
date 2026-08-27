@@ -38,8 +38,8 @@ async function main() {
     timeZone: "America/Argentina/Buenos_Aires",
   });
   const fechaCap = fecha.charAt(0).toUpperCase() + fecha.slice(1);
-  const STATIC_TEXT = "Jueves 19:00 (UTC-3) — escuchanos en vivo";
-  const BAKED_TEXT = `${fechaCap} (Argentina) — escuchanos en vivo`;
+  const STATIC_TEXT = "Jueves 19:00 (UTC-3)";
+  const BAKED_TEXT = `${fechaCap} (Argentina)`;
 
   for (const file of files) {
     const content = readFileSync(file, "utf-8");
