@@ -2,6 +2,6 @@
 ;; Compile to intermediate dir, then bundle with esbuild to dist/
 {:paths ["src" "resources"]
  :output-dir ".squint-cache"
- :copy-resources [:css :html :svg]
+ :copy-resources [:css :html :svg :jpeg :jpg :png]
  :extension ".mjs"
  :elide-imports false}
