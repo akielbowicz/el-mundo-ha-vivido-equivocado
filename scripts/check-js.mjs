@@ -10,7 +10,7 @@
 
 import { chromium } from "@playwright/test";
 import { createServer } from "node:http";
-import { readFileSync, statSync, existsSync } from "node:fs";
+import { readFileSync, statSync, existsSync, createReadStream } from "node:fs";
 import { join, extname } from "node:path";
 
 const PORT = 9876;
@@ -30,6 +30,40 @@ const MIME_TYPES = {
 
 /* ── Static file server ──────────────── */
 
+// Serve a file honoring HTTP Range requests — without 206 Partial Content,
+// Chromium cannot seek in large audio files and the seek bar test is meaningless.
+function sendFile(req, res, filePath, ext) {
+  const stat = statSync(filePath);
+  const type = MIME_TYPES[ext] || "application/octet-stream";
+  const range = req.headers.range;
+
+  if (range) {
+    const m = range.match(/bytes=(\d*)-(\d*)/);
+    const start = m && m[1] ? parseInt(m[1], 10) : 0;
+    const end = m && m[2] ? Math.min(parseInt(m[2], 10), stat.size - 1) : stat.size - 1;
+    if (!m || start > end || start >= stat.size) {
+      res.writeHead(416, { "Content-Range": `bytes */${stat.size}` });
+      res.end();
+      return;
+    }
+    res.writeHead(206, {
+      "Content-Type": type,
+      "Content-Range": `bytes ${start}-${end}/${stat.size}`,
+      "Accept-Ranges": "bytes",
+      "Content-Length": end - start + 1,
+    });
+    createReadStream(filePath, { start, end }).pipe(res);
+    return;
+  }
+
+  res.writeHead(200, {
+    "Content-Type": type,
+    "Content-Length": stat.size,
+    "Accept-Ranges": "bytes",
+  });
+  createReadStream(filePath).pipe(res);
+}
+
 function serve() {
   const server = createServer((req, res) => {
     let url = new URL(req.url, `http://localhost:${PORT}`);
@@ -43,9 +77,7 @@ function serve() {
       // Try flat .html (e.g. /paginas/sobre/ → /paginas/sobre.html)
       const flatPath = join(DIST, url.pathname.replace(/\/$/, "") + ".html");
       if (existsSync(flatPath)) {
-        const ext = extname(flatPath);
-        res.writeHead(200, { "Content-Type": MIME_TYPES[ext] || "text/html" });
-        res.end(readFileSync(flatPath));
+        sendFile(req, res, flatPath, extname(flatPath));
         return;
       }
       // Try 404.html fallback
@@ -60,9 +92,7 @@ function serve() {
       return;
     }
 
-    const ext = extname(filePath);
-    res.writeHead(200, { "Content-Type": MIME_TYPES[ext] || "application/octet-stream" });
-    res.end(readFileSync(filePath));
+    sendFile(req, res, filePath, extname(filePath));
   });
 
   return new Promise(resolve => {
@@ -354,9 +384,101 @@ async function runTests() {
     }
   }
 
+  // Global player seek bar: max must equal audio duration (proportional),
+  // and dragging must commit currentTime on release.
+  async function testSeekBar() {
+    const ctx = await browser.newContext({ javaScriptEnabled: true });
+    const tab = await ctx.newPage();
+
+    try {
+      await tab.goto(`http://localhost:${PORT}/episodios/`, {
+        waitUntil: "networkidle",
+        timeout: 5000,
+      });
+
+      // Find an episode WITH audio from the list (🎧 badge)
+      const withAudio = await tab.evaluate(() => {
+        const li = [...document.querySelectorAll("[data-filter-container] li")]
+          .find((li) => li.querySelector(".badge-audio"));
+        return li ? li.querySelector("a[href^='/episodios/']")?.getAttribute("href") : null;
+      });
+      if (!withAudio) {
+        console.log("  ⚠  no episode with audio — skipping seek bar test");
+        return;
+      }
+
+      await tab.goto(`http://localhost:${PORT}${withAudio}`, {
+        waitUntil: "networkidle",
+        timeout: 5000,
+      });
+
+      // Start playback via the episode play button
+      await tab.click("[data-play-audio]");
+      await tab.waitForSelector("#global-player:not([hidden])", { timeout: 5000 });
+
+      // Wait for metadata (range max is only meaningful after duration is known)
+      await tab.waitForFunction(
+        () => {
+          const a = document.querySelector("#global-audio");
+          return a && isFinite(a.duration) && a.duration > 0;
+        },
+        { timeout: 10000 },
+      );
+
+      const bar = await tab.evaluate(() => ({
+        max: parseFloat(document.querySelector("#global-range").max),
+        duration: document.querySelector("#global-audio").duration,
+        shown: document.querySelector("#global-duration").textContent,
+      }));
+
+      // Drag to the middle: input (preview) + change (commit)
+      await tab.$eval("#global-range", (el) => {
+        el.value = el.max / 2;
+        el.dispatchEvent(new Event("input", { bubbles: true }));
+        el.dispatchEvent(new Event("change", { bubbles: true }));
+      });
+
+      const seekedOk = await tab
+        .waitForFunction(
+          () => {
+            const a = document.querySelector("#global-audio");
+            const r = document.querySelector("#global-range");
+            return Math.abs(a.currentTime - parseFloat(r.max) / 2) < 3;
+          },
+          { timeout: 5000 },
+        )
+        .then(() => true)
+        .catch(() => false);
+
+      const checks = [
+        { ok: Math.abs(bar.max - bar.duration) < 1, msg: `range max equals duration (max=${bar.max}, duration=${bar.duration.toFixed(1)})` },
+        { ok: seekedOk, msg: `seek to middle commits currentTime (~${Math.round(bar.duration / 2)}s)` },
+      ];
+
+      const allOk = checks.every((c) => c.ok);
+      if (allOk) {
+        console.log(`  ✅ seek bar (max=${bar.max.toFixed(0)}s, duration=${bar.duration.toFixed(0)}s)`);
+        passed++;
+      } else {
+        const failures = checks.filter((c) => !c.ok).map((c) => c.msg);
+        console.log(`  ❌ seek bar — ${failures.join("; ")}`);
+        errors.push({ page: "seek bar", issues: failures });
+        failed++;
+      }
+    } catch (err) {
+      console.log(`  ❌ seek bar — ${err.message}`);
+      errors.push({ page: "seek bar", issues: [err.message] });
+      failed++;
+    } finally {
+      await tab.close();
+      await ctx.close();
+    }
+  }
+
   await testAudioPersistence();
   await testNavLoader();
   await testEpisodeFilters();
+  await testSeekBar();
 
   // Dynamically discover and test a texto detail page
   await (async function testTextoDetail() {

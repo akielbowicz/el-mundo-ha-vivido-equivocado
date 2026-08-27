@@ -78,6 +78,10 @@
         s (js/Math.floor (mod s 60))]
     (str m ":" (if (< s 10) "0" "") s)))
 
+;; True while the user is dragging the seek bar — timeupdate must not
+;; fight the input while seeking.
+(def seeking (atom false))
+
 (defn update-player-ui []
   (when audio-el
     (let [current (.-currentTime audio-el)
@@ -85,8 +89,10 @@
       (when (and duration (js/isFinite duration))
         (set! (.-textContent current-el) (format-time current))
         (set! (.-textContent duration-el) (format-time duration))
-        (set! (.-value (.-max range-el)) duration)
-        (set! (.-value range-el) current))
+        ;; Slider maps 0..duration (NOT the HTML default max=100)
+        (set! (.-max range-el) duration)
+        (when-not @seeking
+          (set! (.-value range-el) current)))
       (set! (.-textContent play-btn)
         (if (.-paused audio-el) "▶" "⏸")))))
 
@@ -107,6 +113,7 @@
     (set! (.-textContent current-el) "0:00")
     (set! (.-textContent duration-el) "0:00")
     (set! (.-value range-el) 0)
+    (reset! seeking false)
     (set! (.-hidden player-el) false)
     ;; Save to sessionStorage for persistence across full page loads
     (try
@@ -152,10 +159,20 @@
         (.pause audio-el)
         (set! (.-src audio-el) "")
         (set! (.-hidden player-el) true)))
+    ;; Seek bar: preview while dragging ("input"), commit on release
+    ;; ("change") — avoids seek-storms on the ~100 MB episode files.
     (.addEventListener range-el "input"
       (fn [e]
-        (when (.-duration audio-el)
-          (set! (.-currentTime audio-el) (js/parseFloat (.. e -target -value))))))
+        (reset! seeking true)
+        (let [v (js/parseFloat (.. e -target -value))]
+          (when (and (.-duration audio-el) (js/isFinite (.-duration audio-el)))
+            (set! (.-textContent current-el) (format-time v))))))
+    (.addEventListener range-el "change"
+      (fn [e]
+        (when (and (.-duration audio-el) (js/isFinite (.-duration audio-el)))
+          (set! (.-currentTime audio-el) (js/parseFloat (.. e -target -value))))
+        (reset! seeking false)
+        (update-player-ui)))
     ;; Throttled timeupdate: update UI + save state every ~5s
     (let [last-save (atom 0)]
       (.addEventListener audio-el "timeupdate"
