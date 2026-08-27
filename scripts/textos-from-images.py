@@ -12,7 +12,7 @@ import json, base64, sys, os, re, time, subprocess, urllib.request
 from pathlib import Path
 
 IMAGES_DIR = Path("materiales/raw/imagenes/textos")
-TEXTOS_DIR = Path("textos")
+TEXTOS_DIR = Path("sitio/textos")
 
 MODEL = "google/gemini-2.5-flash"
 
@@ -151,6 +151,14 @@ METADATA_PROMPT = (
 def process_directory(dir_path):
     """Process a single directory of images and create a markdown file."""
     print(f"\n  Processing: {dir_path.name}")
+
+    # Skip directories whose text was already extracted (match by name
+    # substring, conservative: e.g. dir "juego-de-cartas" vs existing
+    # "el-juego-de-cartas.md"). Delete the output to re-extract.
+    existing = {p.name for p in TEXTOS_DIR.glob("*.md")}
+    if any(dir_path.name in name for name in existing):
+        print(f"  Skip: {dir_path.name} — ya extraído en {TEXTOS_DIR}")
+        return
 
     # Collect images sorted by name
     image_exts = {".jpg", ".jpeg", ".png", ".webp", ".tiff", ".tif", ".bmp", ".gif"}
