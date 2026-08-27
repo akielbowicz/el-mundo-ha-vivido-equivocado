@@ -2,7 +2,7 @@
 title: "José Vélez"
 author: "Leonardo Oyola"
 date: "2026-08-27"
-status: draft
+status: published
 description: "Un narrador rememora un evento traumático de su infancia cuando, a punto de cumplir nueve años, fue testigo de un tiroteo durante un partido de fútbol, mientras intenta procesar el miedo y los recuerdos de ese día."
 genre: "cuento"
 license: "Fragmento (derecho de cita)"
@@ -39,6 +39,10 @@ Mi mamá, acongojada, pronunció el nombre de mi papá, más bien el apodo; y de
 -¡Pini!
 
 -Papá...
+
+-...
+
+-...
 
 -¿Qué pasó? ¿Por dónde entraste?
 

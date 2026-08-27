@@ -74,3 +74,21 @@ Cada texto publicado genera automáticamente un archivo EPUB en `dist/textos/<sl
 ```bash
 just new-texto   # preguntas interactivas → crea sitio/textos/<slug>.md
 ```
+
+### OCR desde imágenes escaneadas
+
+Para textos que solo existen en papel, `scripts/textos-from-images.py` extrae el
+texto con OCR (Gemini 2.5 Flash vía OpenRouter) y genera el `.md` con frontmatter:
+
+```bash
+# 1. Una página por imagen, orden alfabético = orden de páginas
+materiales/raw/imagenes/textos/<nombre>/001.jpeg
+materiales/raw/imagenes/textos/<nombre>/002.jpeg
+
+# 2. Extraer (lee OPENROUTER_API_KEY o ~/.pi/agent/auth.json)
+python3 scripts/textos-from-images.py
+```
+
+Saltea directorios ya extraídos; el output queda con `status: draft` — ver
+[docs/ocr-textos.org](docs/ocr-textos.org) para el proceso de validación
+obligatorio antes de publicar.

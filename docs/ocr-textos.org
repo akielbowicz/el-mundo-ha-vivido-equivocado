@@ -1,0 +1,84 @@
+#+TITLE: Workflow — OCR de textos escaneados y validación
+#+DATE: 2026-08-27
+
+* Flujo completo
+
+Texto en papel → fotos → OCR → draft → validación → publicado.
+
+** 1. Imágenes
+
+Una carpeta por texto en ~materiales/raw/imagenes/textos/~ (gitignored):
+
+: materiales/raw/imagenes/textos/josé-vélez/001.jpeg
+: materiales/raw/imagenes/textos/josé-vélez/002.jpeg
+: ...
+
+- Una página por imagen; el orden alfabético define el orden de lectura.
+- Fotos nítidas, página completa, luz pareja.
+
+** 2. Extracción (OCR)
+
+: python3 scripts/textos-from-images.py
+
+- Modelo: ~google/gemini-2.5-flash~ via OpenRouter (key en ~OPENROUTER_API_KEY~
+  o fallback ~$HOME/.pi/agent/auth.json~).
+- Transcribe cada imagen por separado (redimensionada a 1200px, usa ~magick~).
+- Extrae metadatos (título, autor, género, descripción) en un segundo call.
+- Escribe ~sitio/textos/<slug>.md~ con ~status: draft~ (el build lo saltea).
+- Saltea directorios ya extraídos (match conservativo por substring del nombre
+  contra los ~.md~ existentes; borrar el output para re-extraer).
+
+** 3. Validación — OBLIGATORIA antes de publicar
+
+El OCR por-página tiene limitaciones conocidas. Proceso validado en
+~josé-vélez~ (2026-08-27):
+
+*** 3.a. Re-transcripción con páginas juntas
+
+El OCR por-página no ve las *sangrías* (que es lo que marca párrafos en el
+impreso) ni los párrafos que cruzan de página. Re-transcribir las N páginas
+en UN solo call (~ask_gemini_multi~) con prompt de estructura:
+
+- un párrafo = un bloque continuo (sin cortes de línea del impreso)
+- unir palabras cortadas por guión (~práctica-/mente~ → ~prácticamente~)
+- unir párrafos que continúan en la página siguiente
+- cada turno de diálogo como párrafo propio (markdown colapsa líneas sueltas)
+
+*** 3.b. Diff palabra por palabra entre pasadas
+
+Comparar la 1a transcripción (por-página) contra la 2a (estructura) con un
+diff de palabras normalizadas. Solo deberían aparecer:
+
+- uniones de palabras cortadas
+- correcciones puntuales verificadas (ver 3.c)
+- ruido removido (ver 3.d)
+
+Cualquier OTRA diferencia = posible alucinación: revisar contra la imagen.
+
+*** 3.c. Verificación de palabras dudosas
+
+Las dos pasadas van a diferir en palabras sueltas (nombres propios, marcas).
+Verificar cada una con un call dirigido a la página específica, pidiendo
+citado EXACTO del impreso (respuesta JSON). Ejemplos reales resueltos así:
+~Chanchería~ (no Canchería), ~Miqui Ollera~ (no Olleta), ~marca Atletha~,
+~una seña~ (no señal), ~las quise sacar~ (no la).
+
+*** 3.d. Ruido de escaneo
+
+El OCR inventa/garra ruido: garabatos leídos como palabras (~undumada~,
+~PVS~) y la numeración de páginas del libro (13–17). Verificar contra la
+página antes de remover; lo que es folio o mancha, fuera.
+
+*** 3.e. Metadatos
+
+El autor/género los deduce la IA y PUEDE EQUIOCARSE (en ~José Vélez~ puso
+~Anónimo~; el cuento es de Leonardo Oyola). Corregir frontmatter a mano:
+~title~, ~author~, ~description~, ~genre~, ~tags~ (tags de autor en formato
+slug: ~leonardo-oyola~).
+
+** 4. Publicar
+
+: status: draft  →  status: published
+
+El build genera página (~dist/textos/<slug>/~), EPUB y entrada en búsqueda.
+Correr ~just check~ y pushear.
