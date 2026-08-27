@@ -7,7 +7,7 @@ authors:
   - "Sasha"
 duration: "58:00"
 genre: "Cuento comentado"
-image: "/images/el-aleph.svg"
+image: "/images/001.svg"
 image_alt: "Portada del episodio Intro"
 tags:
   - liliana-hecker

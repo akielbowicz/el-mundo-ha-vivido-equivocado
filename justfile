@@ -58,6 +58,10 @@ publish-episodio NUM="":
 new-texto:
     node scripts/new-texto.mjs
 
+# Scaffold a numbered episode cover SVG (Inkscape/LLM-friendly layers)
+new-cover NUM="":
+    node scripts/new-cover.mjs {{NUM}}
+
 # Validate EPUB files in dist/textos/ using epubcheck-ts
 check-epub: build
     node scripts/check-epub.mjs

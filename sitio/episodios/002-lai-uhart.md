@@ -7,7 +7,7 @@ authors:
   - "Sasha"
 duration: "1:01:00"
 genre: "Cuento comentado"
-image: "/images/el-aleph.svg"
+image: "/images/002.svg"
 image_alt: "Portada del episodio 02"
 tags:
   - hebe-uhart
