@@ -1111,6 +1111,57 @@ footer {
   }
 }
 
+/* ── Live Banner ─────────────────────── */
+
+.live-banner {
+  border-top: 1px solid var(--color-border, #e0ddd5);
+  border-bottom: 1px solid var(--color-border, #e0ddd5);
+  background: var(--color-bg);
+  font-family: var(--font-ui);
+}
+
+.live-banner a {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 0;
+  color: var(--color-text);
+  text-decoration: none;
+  font-size: 0.9rem;
+}
+
+.live-banner a:hover .live-text,
+.live-banner a:focus-visible .live-text {
+  text-decoration: underline;
+}
+
+.live-dot {
+  flex-shrink: 0;
+  width: 0.6rem;
+  height: 0.6rem;
+  border-radius: 50%;
+  background: var(--color-muted);
+}
+
+.live-banner[data-state="live"] {
+  background: var(--color-accent);
+}
+
+.live-banner[data-state="live"] a {
+  color: #fff;
+  font-weight: 600;
+}
+
+.live-banner[data-state="live"] .live-dot {
+  background: #fff;
+  animation: live-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes live-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.5; transform: scale(0.8); }
+}
+
 /* ── Responsive ────────────────────────── */
 
 @media (max-width: 480px) {

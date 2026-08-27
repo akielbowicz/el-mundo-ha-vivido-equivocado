@@ -9,6 +9,8 @@ bundle-js: install dist
 	npx squint compile
 	# Copy search as native JS module (no squint compile needed)
 	cp src/search.js dist/search.mjs
+	cp src/live-banner.js dist/live-banner.mjs
+	cp src/live-schedule.js dist/live-schedule.mjs
 	npx esbuild .squint-cache/core.mjs --bundle --outfile=dist/core.js --format=esm --platform=browser
 	cp .squint-cache/index.html .squint-cache/404.html .squint-cache/style.css dist/ 2>/dev/null || true
 	cp -r .squint-cache/images dist/ 2>/dev/null || true
@@ -75,7 +77,7 @@ check: check-html check-a11y check-js check-epub check-tests
 
 # Run unit tests for build pipeline logic
 check-tests:
-    node --test scripts/lib/utils.test.mjs scripts/org-to-html.test.mjs src/search.test.mjs
+    node --test scripts/lib/utils.test.mjs scripts/org-to-html.test.mjs src/search.test.mjs src/live-schedule.test.mjs
 
 # Create a new episode from interactive prompts
 new-episode:
