@@ -40,21 +40,25 @@ Keep this managed block so 'openspec update' can refresh the instructions.
 ## Project structure
 
 ```
+├── sitio/                   # contenido fuente del sitio
+│   ├── index.md             # homepage (frontmatter + secciones editoriales)
+│   ├── episodios/           # episodios (.md con frontmatter)
+│   └── textos/              # textos (.md con frontmatter)
 ├── src/
 │   ├── core.cljs          # entrada squint → dist/core.js
 │   ├── search.js          # búsqueda client-side (JS nativo, no pasa por squint)
 │   └── search.test.mjs    # tests de search
 ├── resources/
-│   ├── index.html         # HTML semántico completo (reader-mode-ready)
 │   ├── 404.html
 │   ├── style.css          # estilos a11y, responsive, prefers-reduced-motion
 │   ├── libros-index.json
 │   ├── images/            # SVGs (og-default, portadas de episodios)
 │   └── CNAME              # dominio principal (equivocadxs.ar)
 ├── scripts/
-│   ├── build-episodes.mjs    # episodios/*.md → HTML
-│   ├── build-textos.mjs      # textos/*.md → HTML + search-index
-│   ├── build-epub.mjs        # textos/*.md → EPUB
+│   ├── build-episodes.mjs    # sitio/episodios/*.md → HTML
+│   ├── build-index.mjs       # sitio/index.md + episodios → dist/index.html (hero/próximas dinámicos)
+│   ├── build-textos.mjs      # sitio/textos/*.md → HTML + search-index
+│   ├── build-epub.mjs        # sitio/textos/*.md → EPUB
 │   ├── build-org-pages.mjs   # .org pages → HTML
 │   ├── build-programa.mjs    # programa/*.org → páginas de programa
 │   ├── build-show.mjs        # materiales/grillas/*.org → dist/_show/ (HTML + PDF)
@@ -73,15 +77,14 @@ Keep this managed block so 'openspec update' can refresh the instructions.
 │   ├── check-js.mjs          # smoke test Playwright sobre dist/
 │   ├── check-epub.mjs        # valida EPUBs con epubcheck-ts
 │   ├── a11y-audit.mjs        # html-validate con reglas a11y sobre el built
-│   ├── textos-from-images.py # OCR (Gemini via OpenRouter): imágenes → textos/*.md
+│   ├── textos-from-images.py # OCR (Gemini via OpenRouter): imágenes → sitio/textos/*.md
 │   ├── download-audio        # bash: YouTube → WAV lossless
 │   ├── download-stream       # bash: graba stream de radio con ffmpeg (cron-friendly)
 │   ├── to-mp3                # bash: audio → MP3 V0
 │   ├── trim-audio            # bash: corta segmento → MP3
 │   ├── separate-vocals       # bash: separa voces/instrumental (Demucs)
 │   └── publish-episodio      # bash: publica grabación como GitHub Release
-├── episodios/               # episodios fuente (.md con frontmatter)
-├── textos/                  # textos fuente (.md con frontmatter)
+├── episodios → sitio/episodios/  (ver arriba)
 ├── materiales/              # material del programa (raw/, programas/, grillas/; parte gitignoreada)
 ├── programa/                # .org: cronograma y cuentos
 ├── docs/                    # notas internas (copyright-review, workflow-programa)

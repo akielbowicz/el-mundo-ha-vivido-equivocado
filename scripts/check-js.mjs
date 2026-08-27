@@ -78,10 +78,26 @@ function serve() {
 const PAGES = [
   { path: "/", name: "homepage" },
   { path: "/episodios/", name: "episodes index" },
-  { path: "/episodios/el-aleph/", name: "episode detail" },
+  { path: firstEpisodeUrl(), name: "episode detail" },
   { path: "/textos/", name: "textos index" },
   { path: "/nonexistent", name: "404 page" },
 ];
+
+// Discover an episode detail URL from the built episodes index instead of
+// hardcoding a slug that may change when episodes are renamed
+function firstEpisodeUrl() {
+  const indexPath = join(DIST, "episodios", "index.html");
+  try {
+    const html = readFileSync(indexPath, "utf-8");
+    const matches = [...html.matchAll(/href="(\/episodios\/([a-z0-9-]+)\/)"/g)];
+    const found = matches.map(m => m[1]).filter(p => !/^\/episodios\/\d+\/$/.test(p));
+    if (found.length > 0) return found[0];
+  } catch {
+    // fall through
+  }
+  console.warn("  ⚠  no episode detail links found in episodes index");
+  return "/episodios/";
+}
 
 async function runTests() {
   const server = await serve();
@@ -97,7 +113,7 @@ async function runTests() {
     const tab = await ctx.newPage();
 
     // Set up sessionStorage before navigating to the episode page
-    await tab.goto(`http://localhost:${PORT}/episodios/el-aleph/`, {
+    await tab.goto(`http://localhost:${PORT}${firstEpisodeUrl()}`, {
       waitUntil: "domcontentloaded",
       timeout: 5000,
     });
@@ -156,7 +172,7 @@ async function runTests() {
     const ctx = await browser.newContext({ javaScriptEnabled: true });
     const tab = await ctx.newPage();
 
-    await tab.goto(`http://localhost:${PORT}/episodios/el-aleph/`, {
+    await tab.goto(`http://localhost:${PORT}${firstEpisodeUrl()}`, {
       waitUntil: "networkidle",
       timeout: 5000,
     });

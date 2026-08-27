@@ -6,7 +6,7 @@ Built with [Squint](https://github.com/squint-cljs/squint) — Clojure syntax co
 
 | just target | what it does |
 |-------------|-------------|
-| `just build` | compile squint src, build episodios, textos, EPUB, org pages, show, sitemap, programa → `dist/` |
+| `just build` | compile squint src, build homepage (index.md), episodios, textos, EPUB, org pages, show, sitemap, programa → `dist/` |
 | `just serve` | build + serve on `http://localhost:8080` |
 | `just watch` | recompile squint on file changes |
 | `just check-html` | validate semantic HTML + Firefox Reader Mode compatibility |
@@ -23,9 +23,23 @@ Built with [Squint](https://github.com/squint-cljs/squint) — Clojure syntax co
 | `just build-show` | build grilla pages (HTML + PDF) into `dist/_show/` |
 | `just clean` | remove `dist/` and `node_modules/` |
 
+## Site content
+
+El contenido del sitio vive en `sitio/`, espejando la estructura del sitio:
+
+- `sitio/index.md` — homepage: frontmatter (`title`, `description`, `tagline`) + secciones
+  editoriales en markdown. El hero (último episodio) y "Próximas lecturas" se generan
+  solos desde el frontmatter de `sitio/episodios/*.md` (hero = publicado con fecha ≤ hoy;
+  próximas = fecha futura). `BUILD_DATE=YYYY-MM-DD` fija la fecha de corte.
+- `sitio/episodios/` — episodios (.md con frontmatter)
+- `sitio/textos/` — textos (.md con frontmatter)
+
+Las URLs públicas no cambian al mover archivos dentro de `sitio/`: `dist/` mantiene
+`/`, `/episodios/<slug>/`, `/textos/<slug>/`.
+
 ## Textos workflow
 
-Textos (cuentos, poemas, fragmentos) se crean como archivos `.md` en `textos/` con frontmatter YAML:
+Textos (cuentos, poemas, fragmentos) se crean como archivos `.md` en `sitio/textos/` con frontmatter YAML:
 
 ```yaml
 ---
@@ -58,5 +72,5 @@ Cada texto publicado genera automáticamente un archivo EPUB en `dist/textos/<sl
 ### Scaffolding
 
 ```bash
-just new-texto   # preguntas interactivas → crea textos/<slug>.md
+just new-texto   # preguntas interactivas → crea sitio/textos/<slug>.md
 ```

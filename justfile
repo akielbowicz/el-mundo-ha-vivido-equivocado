@@ -15,6 +15,7 @@ bundle-js: install dist
 
 build: bundle-js clean-org-pages
     node scripts/build-episodes.mjs
+    node scripts/build-index.mjs
     node scripts/build-textos.mjs
     node scripts/build-epub.mjs
     node scripts/build-org-pages.mjs
@@ -34,9 +35,11 @@ watch: install
 	npx esbuild .squint-cache/core.mjs --bundle --outfile=dist/core.js --format=esm --platform=browser --watch &
 
 # Validate HTML + reader-mode compatibility (pre-commit)
-check-html: install
-    npx html-validate --config .htmlvalidate.json resources/index.html
-    node scripts/check-reader-mode.mjs resources/index.html
+check-html: install build
+    npx html-validate --config .htmlvalidate.json dist/index.html
+    node scripts/check-reader-mode.mjs dist/index.html
+    node scripts/check-reader-mode.mjs dist/episodios/index.html
+    node scripts/check-reader-mode.mjs dist/textos/index.html
 
 # Full a11y audit against built site (pre-push)
 check-a11y: install
