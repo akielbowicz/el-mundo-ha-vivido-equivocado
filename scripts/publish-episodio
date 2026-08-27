@@ -7,10 +7,14 @@ set -euo pipefail
 # Uso:
 #   ./scripts/publish-episodio           # publica el próximo episodio sin publicar
 #   ./scripts/publish-episodio 001       # publica episodio específico
+#
+# Pipeline completo: si el episodio solo tiene WAV, lo convierte a MP3 V0 con
+# to-mp3 antes de publicar; al terminar, re-dispara el deploy del sitio
+# (gh workflow run deploy.yml) para que el player aparezca en la página.
 
 SCRIPT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 REPO="akielbowicz/el-mundo-ha-vivido-equivocado"
-PROG_DIR="$SCRIPT_DIR/materiales/programas"
+PROG_DIR="${EPISODIOS_DIR:-$SCRIPT_DIR/materiales/programas}"
 
 usage() {
   cat >&2 <<EOF
@@ -20,7 +24,12 @@ Publica un episodio de materiales/programas/ en GitHub Releases.
 
 Argumentos:
   --update    Sobreescribe el asset de un release existente (versión editada)
+  --dry-run   Muestra qué haría sin publicar ni disparar deploy
   NUMERO      Nro de episodio (ej: 001). Por defecto: el próximo sin publicar.
+
+Variables:
+  EPISODIOS_DIR   Directorio con los archivos de episodios
+                  (default: materiales/programas/)
 
 Ejemplos:
   ./scripts/publish-episodio              # próximo sin publicar
@@ -32,10 +41,12 @@ EOF
 
 # --- Args ---
 UPDATE=0
+DRY_RUN=0
 NUM=""
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --update|-u) UPDATE=1; shift ;;
+    --dry-run|-n) DRY_RUN=1; shift ;;
     --help|-h)   usage ;;
     *)           NUM="$1"; shift ;;
   esac
@@ -110,6 +121,28 @@ if [ -z "$FILE" ]; then
   exit 1
 fi
 
+# --- Convertir WAV → MP3 si no hay versión MP3 ---
+case "$BNAME" in
+  *.wav)
+    echo "  Sin MP3 para episodio $NUM — convirtiendo $BNAME con to-mp3 (V0)..." >&2
+    if [ "$DRY_RUN" -eq 1 ]; then
+      echo "  [dry-run] ejecutaría: scripts/to-mp3 -o $PROG_DIR $FILE" >&2
+      BNAME="${BNAME%.wav}-durCONVERTIDO.mp3"
+      FILE="$PROG_DIR/$BNAME"
+    else
+      "$SCRIPT_DIR/scripts/to-mp3" -o "$PROG_DIR" "$FILE" >&2
+      NEW_MP3=$(ls "$PROG_DIR/${BNAME%.wav}"-dur*.mp3 2>/dev/null | sort | tail -1)
+      if [ -z "$NEW_MP3" ] || [ ! -f "$NEW_MP3" ]; then
+        echo "  ✗ La conversión no generó MP3" >&2
+        exit 1
+      fi
+      FILE="$NEW_MP3"
+      BNAME=$(basename "$NEW_MP3")
+      echo "  Convertido: $BNAME" >&2
+    fi
+    ;;
+esac
+
 TAG="episodio-$NUM"
 
 # Checkear si ya fue publicado
@@ -133,26 +166,42 @@ fi
 
 # --- Crear o actualizar release ---
 if [ "$UPDATE" -eq 1 ] && grep -qxF "$TAG" <<< "$RELEASED"; then
-  echo "" >&2
-  echo "  Reemplazando assets en $TAG..." >&2
-  # Borrar todos los assets existentes y subir el nuevo
-  gh release view "$TAG" --repo "$REPO" --json assets \
-    --jq '.assets[].name' | while read -r old_asset; do
-    [ -n "$old_asset" ] && gh release delete-asset "$TAG" "$old_asset" --repo "$REPO" --yes >/dev/null 2>&1
-  done
-  gh release upload "$TAG" "$FILE" --repo "$REPO" --clobber 2>&1
+  if [ "$DRY_RUN" -eq 1 ]; then
+    echo "  [dry-run] reemplazaría assets en $TAG con $BNAME" >&2
+  else
+    echo "" >&2
+    echo "  Reemplazando assets en $TAG..." >&2
+    # Borrar todos los assets existentes y subir el nuevo
+    gh release view "$TAG" --repo "$REPO" --json assets \
+      --jq '.assets[].name' | while read -r old_asset; do
+      [ -n "$old_asset" ] && gh release delete-asset "$TAG" "$old_asset" --repo "$REPO" --yes >/dev/null 2>&1
+    done
+    gh release upload "$TAG" "$FILE" --repo "$REPO" --clobber 2>&1
+  fi
 else
-  echo "" >&2
-  echo "  Creando release $TAG en GitHub..." >&2
-  gh release create "$TAG" \
-    --repo "$REPO" \
-    --title "Episodio $NUM — $DATE" \
-    --notes "Grabación del programa del $DATE." \
-    "$FILE" 2>&1
+  if [ "$DRY_RUN" -eq 1 ]; then
+    echo "  [dry-run] crearía release $TAG (Episodio $NUM — $DATE) con $BNAME" >&2
+  else
+    echo "" >&2
+    echo "  Creando release $TAG en GitHub..." >&2
+    gh release create "$TAG" \
+      --repo "$REPO" \
+      --title "Episodio $NUM — $DATE" \
+      --notes "Grabación del programa del $DATE." \
+      "$FILE" 2>&1
+  fi
+fi
+
+# --- Re-disparar deploy (el player aparece cuando el build descubre el release) ---
+if [ "$DRY_RUN" -eq 1 ]; then
+  echo "  [dry-run] dispararía: gh workflow run deploy.yml --repo $REPO" >&2
+else
+  echo "  Re-disparando deploy del sitio..." >&2
+  gh workflow run deploy.yml --repo "$REPO" >&2
 fi
 
 echo "" >&2
-echo "  ✓ Publicado: $TAG" >&2
+echo "  ✓ Listo: $TAG" >&2
 echo "" >&2
 echo "  Link compartible:" >&2
 echo "    https://github.com/$REPO/releases/download/$TAG/$BNAME" >&2

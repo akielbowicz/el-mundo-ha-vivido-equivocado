@@ -51,8 +51,8 @@ check-a11y: install
 download-stream ARGS:
     ./scripts/download-stream {{ARGS}}
 
-# Publish a recording as a GitHub Release and get a shareable link
-# Publish the next unreleased episode from materiales/programas/ to GitHub Releases
+# Publish a recording as a GitHub Release: converts the WAV to MP3 V0 if
+# needed, triggers the site redeploy (player appears with the release)
 publish-episodio NUM="":
     ./scripts/publish-episodio {{NUM}}
 

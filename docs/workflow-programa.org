@@ -54,7 +54,11 @@ build lo ignora si existe el ~-dur~ correspondiente.
 ** 3. Publicación en GitHub Releases (guía)
 
 Se usa ~scripts/publish-episodio~. Lee desde ~materiales/programas/~ y publica
-en GitHub Releases.
+en GitHub Releases. Pipeline completo: si el episodio solo tiene WAV, lo
+convierte a MP3 V0 con ~scripts/to-mp3~ antes de publicar; al terminar,
+re-dispara el deploy del sitio (~gh workflow run deploy.yml~) para que el
+player aparezca en la página del episodio. Con ~--dry-run~ muestra qué haría
+sin publicar.
 
 Comandos:
 
