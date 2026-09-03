@@ -30,6 +30,13 @@ jobs:
         with:
           just-version: 1.36.0
 
+      - name: Install pandoc + weasyprint (for EPUB/PDF generation)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y pandoc libpango-1.0-0 libpangocairo-1.0-0 libffi-dev shared-mime-info python3-pip
+          python3 -m pip install --user weasyprint
+          echo "$(python3 -m site --user-base)/bin" >> $GITHUB_PATH
+
       - name: Build site
         run: just build
 

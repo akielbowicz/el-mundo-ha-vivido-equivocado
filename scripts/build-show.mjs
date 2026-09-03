@@ -109,7 +109,7 @@ function main() {
     if (hasWeasyprint) {
       try {
         execSync(
-          `pandoc "${orgPath}" -f org --pdf-engine=weasyprint --css resources/style.css -o "${pdfOut}"`,
+          `pandoc "${orgPath}" -f org --standalone --pdf-engine=weasyprint --css scripts/print-style.css -o "${pdfOut}"`,
           { stdio: "pipe" }
         );
         console.log(`  ✓ ${slug}/grilla.pdf`);

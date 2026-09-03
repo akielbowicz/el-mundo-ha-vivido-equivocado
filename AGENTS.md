@@ -58,10 +58,10 @@ Keep this managed block so 'openspec update' can refresh the instructions.
 │   ├── build-episodes.mjs    # sitio/episodios/*.md → HTML
 │   ├── build-index.mjs       # sitio/index.md + episodios → dist/index.html (hero/próximas dinámicos)
 │   ├── build-textos.mjs      # sitio/textos/*.md → HTML + search-index
-│   ├── build-epub.mjs        # sitio/textos/*.md → EPUB
+│   ├── build-epub.mjs        # sitio/textos/*.md → EPUB (pandoc)
 │   ├── build-org-pages.mjs   # .org pages → HTML
 │   ├── build-programa.mjs    # programa/*.org → páginas de programa
-│   ├── build-show.mjs        # materiales/grillas/*.org → dist/_show/ (HTML + PDF)
+│   ├── build-show.mjs        # materiales/grillas/*.org → dist/_show/ (HTML + PDF, pandoc + weasyprint)
 │   ├── build-sitemap.mjs     # sitemap.xml
 │   ├── org-to-html.mjs       # conversor org → HTML (+ org-to-html.test.mjs)
 │   ├── lib/utils.mjs         # utilidades compartidas del pipeline (+ utils.test.mjs)
@@ -115,6 +115,7 @@ Keep this managed block so 'openspec update' can refresh the instructions.
 | `new-texto` | scaffolder interactivo para nuevo texto |
 | `publish-episodio` | publica próxima grabación de materiales/programas/ como GitHub Release |
 | `download-stream` | graba stream de radio (default 1h; `ARGS="--duration N"`) |
+| `check-stream-timer` | verifica el timer systemd del stream y lo resetea si está trabado |
 | `to-mp3` | convierte audio a MP3 V0 |
 | `build-show` | construye páginas de grillas (HTML + PDF) en dist/_show/ |
 | `clean-show` | rm -rf dist/_show/ |
@@ -133,6 +134,7 @@ Keep this managed block so 'openspec update' can refresh the instructions.
 - Cada push a `main` → build + deploy automático a GH Pages
 - Workflow: `actions/configure-pages@v5` → `upload-pages-artifact@v3` (path: `dist`) → `deploy-pages@v4`
 - Incluye validación HTML previa al build
+- El CI instala `pandoc` + `weasyprint` (apt + pip) para generar EPUBs y PDFs de grillas
 - No usa rama `gh-pages`
 
 ## Domain
