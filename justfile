@@ -47,6 +47,10 @@ check-html: install build
 check-a11y: install
     node scripts/a11y-audit.mjs
 
+# Check stream timer status and reset if stuck
+check-stream-timer:
+    ./scripts/check-stream-timer
+
 # Download radio stream (default: 1h, use ARGS for --duration N --outdir DIR)
 download-stream ARGS:
     ./scripts/download-stream {{ARGS}}

@@ -21,8 +21,13 @@ Comandos útiles:
 | Qué | Cómo |
 |-----|------|
 | Ver timer | ~systemctl --user list-timers | grep download-stream~ |
+| Check + reset | ~just check-stream-timer~ |
 | Logs | ~journalctl --user -u download-stream.service~ |
 | Desactivar | ~systemctl --user disable --now download-stream.timer~ |
+
+Ocasionalmente systemd pierde el próximo evento del timer y muestra
+~Trigger: n/a~. ~just check-stream-timer~ lo detecta y hace reenable +
+restart automáticamente.
 
 El script acepta ~--duration~ en formatos humanos:
 

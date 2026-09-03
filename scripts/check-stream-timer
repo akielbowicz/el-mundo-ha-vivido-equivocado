@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+# check-stream-timer
+# Check systemd timer status for stream recording and reset if stuck.
+# Use via: just check-stream-timer
+
+set -euo pipefail
+
+echo "=== Timer status ==="
+systemctl --user list-timers | grep --color=never download-stream || echo "No timer found"
+echo ""
+
+NEXT=$(systemctl --user show download-stream.timer -p NextElapseUSecRealtime --value 2>/dev/null || echo "n/a")
+
+if [ "$NEXT" = "n/a" ] || [ -z "$NEXT" ]; then
+  echo "⚠ Timer stuck (no next trigger). Resetting..."
+  systemctl --user reenable download-stream.timer 2>/dev/null
+  systemctl --user restart download-stream.timer 2>/dev/null
+  echo "✓ Reset done, re-checking:"
+  systemctl --user list-timers | grep --color=never download-stream
+else
+  echo "✓ Next trigger: $NEXT"
+fi
