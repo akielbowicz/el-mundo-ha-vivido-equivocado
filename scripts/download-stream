@@ -121,6 +121,12 @@ if ! command -v ffmpeg &>/dev/null; then
   exit 1
 fi
 
+# Matar cualquier ffmpeg anterior del stream (evita que una instancia stale
+# bloquee la próxima grabación. systemd no arranca un nuevo service si el
+# anterior sigue "activating")
+pkill -x ffmpeg 2>/dev/null || true
+sleep 1
+
 mkdir -p "$OUTDIR"
 
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
