@@ -82,7 +82,7 @@ declare -a FILES
 for k in "${!FILES_MAP[@]}"; do
   FILES+=("$k:${FILES_MAP[$k]}")
 done
-IFS=$'\n' FILES=($(sort -t: -k1,1n <<< "${FILES[*]}")); unset IFS
+mapfile -t FILES < <(sort -t: -k1,1n <<< "${FILES[*]}")
 
 # --- Elegir episodio ---
 if [ -z "$NUM" ]; then

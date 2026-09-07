@@ -1,31 +1,59 @@
 #!/usr/bin/env bash
 # check-stream-timer
-# Check systemd timer status for stream recording and reset if stuck.
-# Also detects if the previous service never finished (stale ffmpeg).
-# Use via: just check-stream-timer
+# Chequea el timer del stream y lo resetea si está trabado.
+# Detecta dos modos de falla: timer sin próximo evento (Trigger: n/a) y
+# servicio stale (ffmpeg/bash que nunca terminó, >4h activo).
+#
+# Uso:
+#   ./scripts/check-stream-timer          # máquina local
+#   ./scripts/check-stream-timer --vm     # la VM de Oracle (grabadora primaria)
+#
+# Notificaciones opcionales: NTFY_URL=https://ntfy.sh/<topic>
 
 set -euo pipefail
+
+notify() {
+  if [ -n "${NTFY_URL:-}" ]; then
+    curl -s --max-time 10 -d "$1" "$NTFY_URL" >/dev/null 2>&1 || true
+  fi
+}
+
+# Modo remoto: delega en la copia del script dentro de la VM (just deploy-stream-vm)
+if [ "${1:-}" = "--vm" ]; then
+  exec ssh -o ConnectTimeout=10 oracle-stream '$HOME/check-stream-timer'
+fi
+
+# Timer deshabilitado (backup local): no resetear — resucitaría un timer que
+# se deshabilitó a propósito (la grabación primaria corre en la VM)
+if ! systemctl --user is-enabled --quiet download-stream.timer 2>/dev/null; then
+  echo "ℹ Timer local deshabilitado — la grabación primaria corre en la VM (oracle-stream)."
+  echo "  Backup manual: systemctl --user enable --now download-stream.timer"
+  exit 0
+fi
 
 echo "=== Timer status ==="
 systemctl --user list-timers | grep --color=never download-stream || echo "No timer found"
 echo ""
 
-# Check if service has been running suspiciously long
+# ¿El servicio hace rato que no termina? (normal: ~1h30m; sospechoso: >4h)
 SERVICE_START=$(systemctl --user show download-stream.service -p ActiveEnterTimestamp --value 2>/dev/null || echo "")
 if [ -n "$SERVICE_START" ]; then
   NOW=$(date +%s)
-  SVC_SECS=$(date -d "$SERVICE_START" +%s 2>/dev/null || echo "0")
+  # Si date -d falla (formato inesperado), ELAPSED=0 — nunca falso stale
+  if ! SVC_SECS=$(date -d "$SERVICE_START" +%s 2>/dev/null); then
+    SVC_SECS=$NOW
+  fi
   ELAPSED=$((NOW - SVC_SECS))
-  # 5400s = 1h30m normal. If >4h something is wrong
-  if [ $ELAPSED -gt 14400 ]; then
+  if [ "$ELAPSED" -gt 14400 ]; then
     echo "⚠ El servicio lleva $((ELAPSED / 60))min activo (inició: $SERVICE_START)"
-    echo "  Posible stale ffmpeg. Ejecutando pkill + restart del servicio..."
-    pkill -x ffmpeg 2>/dev/null || true
+    echo "  Posible stale ffmpeg. Ejecutando pkill + stop + reset..."
+    pkill -f "radio01.ferozo.com" 2>/dev/null || true
     sleep 1
     systemctl --user stop download-stream.service 2>/dev/null || true
     systemctl --user reset-failed download-stream.service 2>/dev/null || true
     systemctl --user restart download-stream.timer 2>/dev/null || true
     echo "✓ Limpiado."
+    notify "check-stream-timer: limpié un servicio stale ($((ELAPSED / 60))min)"
     echo ""
   fi
 fi
@@ -38,6 +66,7 @@ if [ "$NEXT" = "n/a" ] || [ -z "$NEXT" ]; then
   systemctl --user restart download-stream.timer 2>/dev/null
   echo "✓ Reset done, re-checking:"
   systemctl --user list-timers | grep --color=never download-stream
+  notify "check-stream-timer: timer stuck, reseteado"
 else
   echo "✓ Next trigger: $NEXT"
 fi

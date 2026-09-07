@@ -79,7 +79,9 @@ Keep this managed block so 'openspec update' can refresh the instructions.
 │   ├── a11y-audit.mjs        # html-validate con reglas a11y sobre el built
 │   ├── textos-from-images.py # OCR (Gemini via OpenRouter): imágenes → sitio/textos/*.md
 │   ├── download-audio        # bash: YouTube → WAV lossless
-│   ├── download-stream       # bash: graba stream de radio con ffmpeg (cron-friendly)
+│   ├── download-stream       # bash: graba stream de radio con ffmpeg (VM Oracle primaria; timers systemd)
+│   ├── check-stream-timer    # bash: chequea/resetea timer del stream (--vm = VM Oracle)
+│   ├── pull-grabacion        # bash: trae la grabación desde la VM Oracle (scp + validación)
 │   ├── to-mp3                # bash: audio → MP3 V0
 │   ├── trim-audio            # bash: corta segmento → MP3
 │   ├── separate-vocals       # bash: separa voces/instrumental (Demucs)
@@ -115,7 +117,9 @@ Keep this managed block so 'openspec update' can refresh the instructions.
 | `new-texto` | scaffolder interactivo para nuevo texto |
 | `publish-episodio` | publica próxima grabación de materiales/programas/ como GitHub Release |
 | `download-stream` | graba stream de radio (default 1h; `ARGS="--duration N"`) |
-| `check-stream-timer` | verifica el timer systemd del stream y lo resetea si está trabado |
+| `check-stream-timer` | verifica el timer del stream y lo resetea si está trabado (`--vm` = VM Oracle) |
+| `pull-grabacion` | trae la grabación desde la VM Oracle (también corre por timer jueves 20:30) |
+| `deploy-stream-vm` | deploya los scripts de grabación a la VM Oracle |
 | `to-mp3` | convierte audio a MP3 V0 |
 | `build-show` | construye páginas de grillas (HTML + PDF) en dist/_show/ |
 | `clean-show` | rm -rf dist/_show/ |

@@ -6,28 +6,45 @@
 Cada jueves el programa sale al aire de 19:00 a 20:15. El flujo automatiza
 grabación, edición, publicación y deploy al sitio.
 
-** 1. Grabación automática (timer systemd)
+** 1. Grabación automática (VM Oracle → pull local)
 
-El timer ~download-stream.timer~ dispara ~download-stream.service~ los
-jueves a las 18:45. Graba 1h30m (19:00–20:15 más margen previo).
+Desde 2026-09 la grabación corre en una VM gratuita de Oracle Cloud. La máquina
+local es prescindible: si está apagada, la VM graba igual.
 
-- Timer: ~$HOME/.config/systemd/user/download-stream.timer~
-- Service: ~$HOME/.config/systemd/user/download-stream.service~
-- Script: ~scripts/download-stream~
-- Salida: ~materiales/grabaciones/stream_<timestamp>_<duracion>s.mp3~
+: VM Oracle (siempre prendida, gratis)
+: └── jueves 18:45 → download-stream (ffmpeg, 1h30m) → ~/grabaciones/
+: Máquina local
+: └── jueves 20:30 → pull-grabacion (scp) → materiales/grabaciones/
+
+- VM: alias SSH ~oracle-stream~ (~/.ssh/config), scripts en ~~/ (~just deploy-stream-vm~
+  para deployarlos), timer ~download-stream.timer~ (Persistent=true).
+  IMPORTANTE: ~sudo loginctl enable-linger ubuntu~ — sin linger los timers de
+  usuario mueren al cerrar la sesión SSH.
+- Local: timer ~pull-grabacion.timer~ (jueves 20:30). El timer local
+  ~download-stream.timer~ quedó DESHABILITADO (backup manual: se re-habilita
+  con ~systemctl --user enable --now download-stream.timer~).
+- Script: ~scripts/download-stream~ — con ~pkill~ del ffmpeg previo del stream
+  (scopeado a la URL, no mata otros ffmpeg), ~timeout = duración + 15m~,
+  reintentos de conexión, conserva el parcial si corta por timeout, valida la
+  duración final y retiene solo las últimas 12 grabaciones.
+- Salida local: ~materiales/grabaciones/stream_<timestamp>_<duracion>s.mp3~
 
 Comandos útiles:
 
 | Qué | Cómo |
 |-----|------|
-| Ver timer | ~systemctl --user list-timers | grep download-stream~ |
-| Check + reset | ~just check-stream-timer~ |
-| Logs | ~journalctl --user -u download-stream.service~ |
-| Desactivar | ~systemctl --user disable --now download-stream.timer~ |
+| Check timer local | ~just check-stream-timer~ |
+| Check timer VM | ~just check-stream-timer --vm~ |
+| Pull manual | ~just pull-grabacion~ |
+| Deploy scripts a VM | ~just deploy-stream-vm~ |
+| Logs VM | ~ssh oracle-stream journalctl --user -u download-stream.service~ |
+| Logs pull local | ~journalctl --user -u pull-grabacion.service~ |
+| Desactivar | ~systemctl --user disable --now pull-grabacion.timer~ |
 
-Ocasionalmente systemd pierde el próximo evento del timer y muestra
-~Trigger: n/a~. ~just check-stream-timer~ lo detecta y hace reenable +
-restart automáticamente.
+~just check-stream-timer~ detecta y limpia automáticamente los dos modos de
+defalla: timer sin próximo evento (~Trigger: n/a~) y servicio stale (activo
+>4h). Con ~--vm~ hace lo mismo sobre la VM vía SSH. Notificaciones opcionales
+de fallos con la variable ~NTFY_URL~ (ntfy.sh) en el entorno del service.
 
 El script acepta ~--duration~ en formatos humanos:
 

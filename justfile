@@ -47,9 +47,18 @@ check-html: install build
 check-a11y: install
     node scripts/a11y-audit.mjs
 
-# Check stream timer status and reset if stuck
-check-stream-timer:
-    ./scripts/check-stream-timer
+# Check stream timer status and reset if stuck (--vm para la VM Oracle)
+check-stream-timer *ARGS:
+    ./scripts/check-stream-timer {{ARGS}}
+
+# Traer la grabación desde la VM Oracle (también corre por timer los jueves 20:30)
+pull-grabacion *ARGS:
+    ./scripts/pull-grabacion {{ARGS}}
+
+# Deployar scripts de grabación a la VM Oracle (sync + verificar timer + linger)
+deploy-stream-vm:
+    scp -q scripts/download-stream scripts/check-stream-timer oracle-stream:~/
+    ssh oracle-stream "chmod +x ~/download-stream ~/check-stream-timer && bash -n ~/download-stream ~/check-stream-timer && systemctl --user daemon-reload && echo 'linger:' \$(loginctl show-user \$USER --property=Linger --value) && systemctl --user list-timers | grep --color=never download-stream"
 
 # Download radio stream (default: 1h, use ARGS for --duration N --outdir DIR)
 download-stream ARGS:

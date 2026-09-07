@@ -1,0 +1,47 @@
+# typos-cli config — https://github.com/crate-ci/typos
+# El repo es bilingüe (contenido en español): typos usa diccionario inglés.
+
+[files]
+# Prosa editorial en español — el diccionario inglés da solo falsos positivos acá
+extend-exclude = [
+  "sitio/",
+  "programa/",
+  "materiales/",
+  "extra/",
+  "openspec/",
+  "resources/",
+  "*.org",
+  "*.md",
+  "*.json",
+  "*.svg",
+]
+
+[default.extend-words]
+# Palabras españolas legítimas en código (identity mappings)
+Argumentos = "Argumentos"
+autor = "autor"
+Autor = "Autor"
+caracteres = "caracteres"
+Checkear = "Checkear"
+decoracion = "decoracion"
+Descripcion = "Descripcion"
+directorios = "directorios"
+individuales = "individuales"
+materiales = "materiales"
+Materiales = "Materiales"
+Posible = "Posible"
+previos = "previos"
+programa = "programa"
+Programa = "Programa"
+programas = "programas"
+Programas = "Programas"
+Requiere = "Requiere"
+seeked = "seeked"  # término técnico ffmpeg/audio (seek + ed)
+ser = "ser"
+hace = "hace"
+BA = "BA"  # Buenos Aires (timezone test)
+edn = "edn"  # extensión de squint.edn (Edn data format)
+falso = "falso"
+falsos = "falsos"
+transcrito = "transcrito"
+variante = "variante"

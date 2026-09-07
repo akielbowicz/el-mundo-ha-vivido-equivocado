@@ -1,0 +1,76 @@
+#!/usr/bin/env bash
+# pull-grabacion
+# Trae la grabación del stream desde la VM de Oracle (grabada por el timer de
+# los jueves 18:45) a la máquina local, validando que esté completa.
+#
+# Uso:
+#   ./scripts/pull-grabacion                    # trae la más reciente
+#   ./scripts/pull-grabacion stream_20260910_184500_5400s.mp3  # archivo específico
+#   NTFY_URL=https://ntfy.sh/<topic> ./scripts/pull-grabacion  # + notificación si falla
+#
+# Timer local: jueves ~20:30 (después de que la VM termina a las 20:15).
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+REMOTE_HOST="oracle-stream"
+REMOTE_DIR="grabaciones"
+LOCAL_DIR="${SCRIPT_DIR}/materiales/grabaciones"
+
+notify() {
+  if [ -n "${NTFY_URL:-}" ]; then
+    curl -s --max-time 10 -d "$1" "$NTFY_URL" >/dev/null 2>&1 || true
+  fi
+}
+
+fail() {
+  echo "  ✗ $1" >&2
+  notify "pull-grabacion falló: $1"
+  exit 1
+}
+
+mkdir -p "$LOCAL_DIR"
+
+# Archivo a traer: el especificado, o el más reciente en la VM
+if [ $# -ge 1 ]; then
+  FILE="$1"
+else
+  FILE=$(ssh -o ConnectTimeout=10 "$REMOTE_HOST" "ls -1t ${REMOTE_DIR}/stream_*.mp3 2>/dev/null | head -1" | xargs -r basename)
+  [ -n "$FILE" ] || fail "No hay grabaciones en la VM (${REMOTE_HOST}:${REMOTE_DIR})"
+fi
+
+# Ya descargado: nada que hacer
+if [ -f "${LOCAL_DIR}/${FILE}" ]; then
+  echo "  ✓ ${FILE} ya está en ${LOCAL_DIR} — nada que hacer"
+  exit 0
+fi
+
+# Duración esperada desde el sufijo del filename (stream_*_<secs>s.mp3)
+EXPECTED_SECS=$(echo "$FILE" | grep -oE '_[0-9]+s\.mp3$' | tr -dc '0-9')
+
+echo "  Descargando ${REMOTE_HOST}:${REMOTE_DIR}/${FILE} → ${LOCAL_DIR}/"
+
+# Descarga a archivo temporal: si falla o es incompleta, no deja basura
+# que el "ya existe" check de las próximas corridas tomaría como definitiva
+TMPFILE="${LOCAL_DIR}/.partial-${FILE}"
+if ! timeout 300 scp -q "${REMOTE_HOST}:${REMOTE_DIR}/${FILE}" "${TMPFILE}"; then
+  rm -f "$TMPFILE"
+  fail "scp falló o expiró (${REMOTE_HOST}:${FILE})"
+fi
+
+# Validar duración (≥90% de lo esperado) — descarta parciales/trozos cortados
+DURATION=$(ffprobe -v error -show_entries format=duration -of csv=p=0 "$TMPFILE" 2>/dev/null | cut -d. -f1)
+DURATION=${DURATION:-0}
+if [ -n "$EXPECTED_SECS" ] && [ "$EXPECTED_SECS" -gt 0 ]; then
+  MIN_OK=$((EXPECTED_SECS * 90 / 100))
+  if [ "$DURATION" -lt "$MIN_OK" ]; then
+    HUMAN_EXP=$(printf '%dh%02dm' $((EXPECTED_SECS / 3600)) $(((EXPECTED_SECS % 3600) / 60)))
+    HUMAN_GOT=$(printf '%dh%02dm' $((DURATION / 3600)) $(((DURATION % 3600) / 60)))
+    rm -f "$TMPFILE"
+    fail "Grabación incompleta: ${HUMAN_GOT} de ${HUMAN_EXP} esperados — se descarta el parcial (queda en la VM)"
+  fi
+fi
+
+mv "$TMPFILE" "${LOCAL_DIR}/${FILE}"
+HUMAN=$(printf '%dh%02dm' $((DURATION / 3600)) $(((DURATION % 3600) / 60)))
+echo "  ✓ ${FILE} (${HUMAN}) — $(du -h "${LOCAL_DIR}/${FILE}" | cut -f1)"

@@ -3,7 +3,8 @@ set -euo pipefail
 
 # download-stream
 # Graba un stream de radio con ffmpeg.
-# Diseñado para cron: corta automáticamente, tolera corrupción, archivos timestamp.
+# Diseñado para timers systemd (local o VM Oracle): corta automáticamente,
+# tolera corrupción, archivos timestamp.
 #
 # Uso:
 #   ./scripts/download-stream                           # 1 hora por defecto
@@ -21,6 +22,13 @@ SCRIPT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 STREAM_URL="https://radio01.ferozo.com/proxy/ra01001031?mp=/stream"
 OUTDIR="${SCRIPT_DIR}/materiales/grabaciones"
 DURATION=3600
+
+# Notificación opcional de fallos (ntfy.sh): NTFY_URL=https://ntfy.sh/<topic>
+notify() {
+  if [ -n "${NTFY_URL:-}" ]; then
+    curl -s --max-time 10 -d "$1" "$NTFY_URL" >/dev/null 2>&1 || true
+  fi
+}
 
 usage() {
   cat >&2 <<EOF
@@ -121,10 +129,11 @@ if ! command -v ffmpeg &>/dev/null; then
   exit 1
 fi
 
-# Matar cualquier ffmpeg anterior del stream (evita que una instancia stale
-# bloquee la próxima grabación. systemd no arranca un nuevo service si el
-# anterior sigue "activating")
-pkill -x ffmpeg 2>/dev/null || true
+# Matar cualquier ffmpeg anterior DEL STREAM (evita que una instancia stale
+# bloquee la próxima grabación: systemd no arranca un nuevo service si el
+# anterior sigue "activating"). Con -f scopeado a la URL del stream para NO
+# matar otros ffmpeg del sistema (encodings, transcodes, etc.)
+pkill -f "radio01.ferozo.com" 2>/dev/null || true
 sleep 1
 
 mkdir -p "$OUTDIR"
@@ -138,16 +147,46 @@ echo "  Duración: ${DURATION} → ${DURATION_SECS}s" >&2
 echo "  Archivo:  $OUTFILE" >&2
 echo "" >&2
 
-if ! ffmpeg -y \
+# Timeout = duración + 15 min de margen — evita que ffmpeg cuelgue indefinidamente
+# si el stream se corta sin cerrar la conexión (causa del stale de 7 días)
+# -reconnect: recupera la grabación si el stream se desconecta momentáneamente
+FFMPEG_TIMEOUT=$((DURATION_SECS + 900))
+set +e
+timeout "$FFMPEG_TIMEOUT" ffmpeg -y \
+  -reconnect 1 \
+  -reconnect_streamed 1 \
+  -reconnect_delay_max 10 \
   -i "$STREAM_URL" \
   -t "$DURATION_SECS" \
   -c copy \
   -fflags +discardcorrupt \
-  "$OUTFILE" 2>&1; then
-  echo "  ✗ Error grabando stream. Eliminando archivo parcial." >&2
+  "$OUTFILE" 2>&1
+FFMPEG_EXIT=$?
+set -e
+
+if [ "$FFMPEG_EXIT" -eq 124 ]; then
+  # Timeout no es error de grabación: conservar el parcial (puede tener horas
+  # de audio válido). Borrarlo acá sería tirar la grabación entera.
+  echo "  ⚠ Timeout (${FFMPEG_TIMEOUT}s) — conservando grabación parcial: $OUTFILE" >&2
+  notify "download-stream: timeout — parcial conservado ($OUTFILE)"
+elif [ "$FFMPEG_EXIT" -ne 0 ] || [ ! -s "$OUTFILE" ]; then
+  echo "  ✗ Error grabando stream (exit $FFMPEG_EXIT). Eliminando archivo parcial." >&2
   rm -f "$OUTFILE"
+  notify "download-stream: error grabando (exit $FFMPEG_EXIT)"
   exit 1
 fi
+
+# Validación de duración — avisa si quedó corta (stream caído, reconnects, etc.)
+DURATION=$(ffprobe -v error -show_entries format=duration -of csv=p=0 "$OUTFILE" 2>/dev/null | cut -d. -f1)
+DURATION=${DURATION:-0}
+if [ "$DURATION" -lt $((DURATION_SECS * 90 / 100)) ]; then
+  echo "  ⚠ Grabación corta: ${DURATION}s de ${DURATION_SECS}s esperados — revisar antes de publicar" >&2
+  notify "download-stream: grabación corta (${DURATION}s de ${DURATION_SECS}s)"
+fi
+
+# Retención: mantener solo las últimas 12 grabaciones (el disco no es infinito)
+# (sort alfabético = cronológico: el nombre lleva timestamp)
+find "${OUTDIR}" -maxdepth 1 -name 'stream_*.mp3' -type f | sort -r | tail -n +13 | xargs -r rm -f
 
 echo "" >&2
 echo "  ✓ Grabado: $OUTFILE ($(du -h "$OUTFILE" | cut -f1))" >&2
