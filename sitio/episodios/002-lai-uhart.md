@@ -8,7 +8,7 @@ authors:
 duration: "1:01:00"
 genre: "Cuento comentado"
 image: "/images/002.svg"
-image_alt: "Portada del episodio 02"
+image_alt: "Portada del episodio 02: un abanico de cartas (as de espadas) junto a una sombrilla de balneario sobre las olas"
 tags:
   - hebe-uhart
   - alberto-laiseca

@@ -22,10 +22,14 @@
 <svg xmlns="http://www.w3.org/2000/svg" xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape" viewBox="0 0 400 400" width="400" height="400">
   <title>Episodio 01: Intro al programa</title>
   <defs>
-    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+    <linearGradient id="bg" x1="0" y1="0" x2="400" y2="400" gradientUnits="userSpaceOnUse">
       <stop offset="0%" style="stop-color:#2e1015"/>
       <stop offset="100%" style="stop-color:#471a20"/>
     </linearGradient>
+    <radialGradient id="glow">
+      <stop offset="0%" style="stop-color:#e8c0c0;stop-opacity:0.25"/>
+      <stop offset="100%" style="stop-color:#e8c0c0;stop-opacity:0"/>
+    </radialGradient>
     <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="0%">
       <stop offset="0%" style="stop-color:#d8a8a8"/>
       <stop offset="100%" style="stop-color:#e8c0c0"/>
@@ -42,17 +46,49 @@
     <rect x="60" y="298" width="280" height="2" fill="url(#accent)" opacity="0.6"/>
   </g>
 
-  <!-- ZONA LIBRE para ilustración: este grupo es el que un LLM (o vos en
-       Inkscape) reemplaza por la composición del episodio. -->
+  <!-- Casita entre 10 pinos (Casas) + guirnalda de luces (Hecker) -->
   <g inkscape:groupmode="layer" id="decoracion" inkscape:label="decoracion">
-    <circle cx="200" cy="220" r="80" fill="none" stroke="url(#accent)" stroke-width="1" opacity="0.15"/>
-    <circle cx="200" cy="220" r="50" fill="none" stroke="url(#accent)" stroke-width="0.5" opacity="0.2"/>
-    <text x="200" y="330" text-anchor="middle" fill="#e8c0c0" font-family="sans-serif" font-size="14" opacity="0.3">✦ ✦ ✦</text>
+    <!-- luna -->
+    <circle cx="318" cy="126" r="17" fill="url(#accent)" opacity="0.75"/>
+    <circle cx="324" cy="121" r="14" fill="url(#bg)"/>
+
+    <!-- guirnalda de luces -->
+    <path d="M 75 190 Q 200 235 325 190" fill="none" stroke="url(#accent)" stroke-width="1" opacity="0.5"/>
+    <circle cx="112" cy="203" r="2.5" fill="url(#accent)" opacity="0.8"/>
+    <circle cx="162" cy="212" r="2.5" fill="url(#accent)" opacity="0.8"/>
+    <circle cx="200" cy="215" r="2.5" fill="url(#accent)" opacity="0.8"/>
+    <circle cx="238" cy="212" r="2.5" fill="url(#accent)" opacity="0.8"/>
+    <circle cx="288" cy="203" r="2.5" fill="url(#accent)" opacity="0.8"/>
+
+    <!-- pinos (izquierda) -->
+    <path d="M 76 252 L 85 228 L 94 252 Z" fill="url(#accent)" opacity="0.55"/>
+    <path d="M 96 252 L 105 218 L 114 252 Z" fill="url(#accent)" opacity="0.7"/>
+    <path d="M 116 252 L 125 226 L 134 252 Z" fill="url(#accent)" opacity="0.6"/>
+    <path d="M 136 252 L 145 214 L 154 252 Z" fill="url(#accent)" opacity="0.75"/>
+    <path d="M 156 252 L 165 232 L 174 252 Z" fill="url(#accent)" opacity="0.5"/>
+
+    <!-- pinos (derecha) -->
+    <path d="M 226 252 L 235 224 L 244 252 Z" fill="url(#accent)" opacity="0.65"/>
+    <path d="M 246 252 L 255 216 L 264 252 Z" fill="url(#accent)" opacity="0.75"/>
+    <path d="M 266 252 L 275 230 L 284 252 Z" fill="url(#accent)" opacity="0.55"/>
+    <path d="M 286 252 L 295 220 L 304 252 Z" fill="url(#accent)" opacity="0.7"/>
+    <path d="M 306 252 L 315 228 L 324 252 Z" fill="url(#accent)" opacity="0.6"/>
+
+    <!-- la casa -->
+    <rect x="192" y="228" width="28" height="24" fill="none" stroke="url(#accent)" stroke-width="1.5" opacity="0.85"/>
+    <path d="M 188 228 L 206 212 L 224 228" fill="none" stroke="url(#accent)" stroke-width="1.5" opacity="0.85"/>
+    <rect x="202" y="240" width="8" height="12" fill="url(#accent)" opacity="0.7"/>
+    <rect x="197" y="234" width="6" height="6" fill="url(#accent)" opacity="0.45"/>
+
+    <!-- estrellas -->
+    <text x="84" y="158" text-anchor="middle" fill="#e8c0c0" font-family="sans-serif" font-size="11" opacity="0.35">✦</text>
+    <text x="262" y="172" text-anchor="middle" fill="#e8c0c0" font-family="sans-serif" font-size="8" opacity="0.3">✦</text>
   </g>
 
   <g inkscape:groupmode="layer" id="titulo" inkscape:label="titulo">
-    <text x="200" y="150" text-anchor="middle" fill="url(#accent)" font-family="Georgia, serif" font-size="22" font-weight="bold">Episodio 01: Intro al programa</text>
-    <text x="200" y="180" text-anchor="middle" fill="#e8c0c0" font-family="Georgia, serif" font-size="11" opacity="0.7">Sasha, liliana-hecker, fabian-casas</text>
+    <text x="200" y="138" text-anchor="middle" fill="url(#accent)" font-family="Georgia, serif" font-size="22" font-weight="bold">Episodio 01</text>
+    <text x="200" y="160" text-anchor="middle" fill="#e8c0c0" font-family="Georgia, serif" font-size="13" font-style="italic" opacity="0.85">Intro al programa</text>
+    <text x="200" y="182" text-anchor="middle" fill="#e8c0c0" font-family="Georgia, serif" font-size="11" opacity="0.7">Fabián Casas · Liliana Heker</text>
     <!--
       Si el título es largo, bajar font-size o partir en dos <text> (y=135 y y=160).
       El <title> del episodio tiene regla a11y: mantener textos legibles.
