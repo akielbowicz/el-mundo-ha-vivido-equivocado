@@ -18,7 +18,7 @@ import { readdir } from "node:fs/promises";
 import { join } from "node:path";
 import { marked } from "marked";
 import matter from "gray-matter";
-import { renderTemplate, formatDate, escapeHtml } from "./lib/utils.mjs";
+import { renderTemplate, formatDate, escapeHtml, slugify } from "./lib/utils.mjs";
 
 // Shift markdown headings down one level (h1→h2, h2→h3, etc.) so the
 // page keeps a single <h1>: the site title from the template.
@@ -56,6 +56,7 @@ async function readEpisodes() {
     if (data.status === "draft") continue;
     episodes.push({
       ...data,
+      slug: data.slug || slugify(String(data.title)),
       date: String(data.date),
       authors: Array.isArray(data.authors) ? data.authors.join(", ") : data.authors || "",
       file,

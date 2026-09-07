@@ -8,14 +8,18 @@ pre-commit:
       glob: "*.html"
       run: node scripts/check-reader-mode.mjs {staged_files}
     shellcheck:
-      # scripts bash en scripts/ (sin extensión): excluye mjs/html/css/py/templates
-      glob:
-        - "scripts/*"
-        - "!scripts/*.mjs"
-        - "!scripts/*.html"
-        - "!scripts/*.css"
-        - "!scripts/*.py"
-      run: shellcheck -S warning {staged_files}
+      # scripts bash en scripts/ (sin extensión). Filtramos acá y no con glob:
+      # las negaciones de glob no excluyen bien los .mjs en lefthook.
+      run: |
+        for f in {staged_files}; do
+          case "$f" in
+            scripts/*)
+              case "$f" in
+                *.mjs|*.html|*.css|*.py|*.json|*.edn) ;;
+                *) shellcheck -S warning "$f" ;;
+              esac ;;
+          esac
+        done
     typos:
       # typo checker (diccionario inglés) — config en _typos.toml
       run: typos
