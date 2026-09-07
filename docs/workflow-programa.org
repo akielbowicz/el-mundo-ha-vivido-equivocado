@@ -16,8 +16,14 @@ local es prescindible: si está apagada, la VM graba igual.
 : Máquina local
 : └── jueves 20:30 → pull-grabacion (scp) → materiales/grabaciones/
 
-- VM: alias SSH ~oracle-stream~ (~/.ssh/config), scripts en ~~/ (~just deploy-stream-vm~
-  para deployarlos), timer ~download-stream.timer~ (Persistent=true).
+- VM: alias SSH ~oracle-stream~ en ~$HOME/.ssh/config~ (host ~129.80.26.2~, user
+  ~ubuntu~, clave ~$HOME/.ssh/id_oracle~ con ~IdentitiesOnly yes~ — la clave vive
+  en ~.ssh~, NO en ~Downloads~, y NO va a dotfiles/chezmoi: es privada).
+  Setup completo de la VM: Ubuntu 24.04, shape x86 gratis (2 vCPU, 1 GB RAM,
+  95 GB disk), ~ffmpeg~ + ~rclone~ via apt, timezone
+  ~America/Argentina/Buenos_Aires~ (~sudo timedatectl set-timezone ...~).
+  Scripts en ~~/ (~just deploy-stream-vm~ para deployarlos desde el repo).
+  Timers ~download-stream.timer~ (Persistent=true).
   IMPORTANTE: ~sudo loginctl enable-linger ubuntu~ — sin linger los timers de
   usuario mueren al cerrar la sesión SSH.
 - Local: timer ~pull-grabacion.timer~ (jueves 20:30). El timer local
@@ -40,6 +46,16 @@ Comandos útiles:
 | Logs VM | ~ssh oracle-stream journalctl --user -u download-stream.service~ |
 | Logs pull local | ~journalctl --user -u pull-grabacion.service~ |
 | Desactivar | ~systemctl --user disable --now pull-grabacion.timer~ |
+
+** Timer de prueba diario (VM)
+
+Para verificar que la cadena funciona sin esperar al jueves: la VM tiene un
+timer ~download-stream-test.timer~ que graba **todos los días 9:00-10:00 -03**
+(1h) a ~~/grabaciones-test/~ (directorio separado del de producción).
+
+| Verificar | ~ssh oracle-stream 'ls -la grabaciones-test/'~ |
+| Duración de cada archivo | ~ssh oracle-stream 'ffprobe -v error -show_entries format=duration -of csv=p=0 grabaciones-test/<file>'~ |
+| Desactivar cuando no haga falta | ~ssh oracle-stream 'systemctl --user disable --now download-stream-test.timer'~ |
 
 ~just check-stream-timer~ detecta y limpia automáticamente los dos modos de
 defalla: timer sin próximo evento (~Trigger: n/a~) y servicio stale (activo
