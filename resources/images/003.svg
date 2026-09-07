@@ -48,24 +48,16 @@
 
   <!-- Guantes de boxeo (Oyola) + pelota (Almada) -->
   <g inkscape:groupmode="layer" id="decoracion" inkscape:label="decoracion">
-    <!-- soga -->
-    <line x1="146" y1="190" x2="254" y2="190" stroke="url(#accent)" stroke-width="1.5" opacity="0.5"/>
-
-    <!-- guante izquierdo -->
-    <line x1="168" y1="190" x2="168" y2="200" stroke="url(#accent)" stroke-width="1.2" opacity="0.7"/>
-    <circle cx="168" cy="220" r="24" fill="url(#glow)"/>
-    <circle cx="168" cy="218" r="22" fill="url(#accent)" opacity="0.85"/>
-    <circle cx="184" cy="229" r="8" fill="url(#accent)" opacity="0.85"/>
-    <rect x="155" y="237" width="26" height="12" rx="3" fill="url(#accent)" opacity="0.55"/>
-    <path d="M 161 202 q -3 15 0 29" fill="none" stroke="#101c2e" stroke-width="1" opacity="0.35"/>
-
-    <!-- guante derecho (espejado) -->
-    <line x1="232" y1="190" x2="232" y2="200" stroke="url(#accent)" stroke-width="1.2" opacity="0.7"/>
-    <circle cx="232" cy="220" r="24" fill="url(#glow)"/>
-    <circle cx="232" cy="218" r="22" fill="url(#accent)" opacity="0.85"/>
-    <circle cx="216" cy="229" r="8" fill="url(#accent)" opacity="0.85"/>
-    <rect x="219" y="237" width="26" height="12" rx="3" fill="url(#accent)" opacity="0.55"/>
-    <path d="M 239 202 q 3 15 0 29" fill="none" stroke="#101c2e" stroke-width="1" opacity="0.35"/>
+    <!-- disco de vinilo -->
+    <circle cx="180" cy="220" r="30" fill="url(#glow)"/>
+    <circle cx="180" cy="220" r="27" fill="url(#accent)" opacity="0.85"/>
+    <circle cx="180" cy="220" r="23" fill="none" stroke="#101c2e" stroke-width="1" opacity="0.35"/>
+    <circle cx="180" cy="220" r="19" fill="none" stroke="#101c2e" stroke-width="0.8" opacity="0.3"/>
+    <circle cx="180" cy="220" r="15" fill="none" stroke="#101c2e" stroke-width="0.6" opacity="0.25"/>
+    <circle cx="180" cy="220" r="9" fill="#a8cce8"/>
+    <circle cx="180" cy="220" r="2" fill="#101c2e"/>
+    <!-- nota musical -->
+    <text x="230" y="228" text-anchor="middle" fill="#a8cce8" font-family="sans-serif" font-size="20" opacity="0.7">♪</text>
 
     <!-- pelota -->
     <circle cx="305" cy="240" r="19" fill="url(#accent)" opacity="0.85"/>

@@ -8,7 +8,7 @@ authors:
 duration: "1:00:00"
 genre: "Cuento comentado"
 image: "/images/003.svg"
-image_alt: "Portada del episodio 03: un par de guantes de boxeo colgados de una soga y una pelota de fútbol en pleno vuelo"
+image_alt: "Portada del episodio 03: un disco de vinilo y una pelota de fútbol en pleno vuelo"
 tags:
   - leonardo-oyola
   - selva-almada
