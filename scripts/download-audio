@@ -2,72 +2,129 @@
 set -euo pipefail
 
 # download-audio
-# Descarga el mejor audio de un video de YouTube como WAV (lossless).
+# Descarga el mejor audio de videos de YouTube como WAV (lossless).
 #
 # Uso:  ./download-audio <url> [nombre]
-#       Si no se pasa nombre, usa el título del video.
+#       ./download-audio -f lista.txt [-d subdir]
+#
+# La salida se organiza en subdirectorios de materiales/raw/:
+#   - Modo single:      materiales/raw/  (o materiales/raw/<subdir>/ con -d)
+#   - Modo batch (-f):  materiales/raw/<subdir>/  (default: nombre de la lista sin extensión)
 
 SCRIPT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 OUTDIR="${OUTDIR:-$SCRIPT_DIR/materiales/raw}"
 
-usage() {
-  cat >&2 <<EOF
-Uso: $(basename "$0") <url> [nombre]
-
-Descarga el audio de un video de YouTube como WAV (lossless).
-
-Argumentos:
-  url       URL del video de YouTube
-  nombre    Nombre del archivo de salida (sin extensión)
-            Por defecto: título del video
-
-El archivo se guarda en: $OUTDIR
-EOF
-  exit 1
-}
-
-# --- Help flag ---
-if [ "$#" -eq 0 ] || [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
-  usage
-fi
-
-URL="$1"
-NAME="${2:-}"
-
-# --- Output directory ---
-mkdir -p "$OUTDIR"
-if ! touch "$OUTDIR/.write-test" 2>/dev/null; then
-  echo "  ✗ No se puede escribir en $OUTDIR" >&2
-  exit 1
-fi
-rm -f "$OUTDIR/.write-test"
-
-# --- Sanitize NAME (evita espacios/raros en el filename) ---
+# Sanitize (evita espacios/raros en el filename)
 sanitize() {
   echo "$1" | sed 's/[<>:"/\\|?*]/_/g; s/  */ /g; s/^[[:space:]]*//; s/[[:space:]]*$//'
 }
 
-if [ -n "$NAME" ]; then
-  NAME_SANITIZED=$(sanitize "$NAME")
-  OUTPUT_TEMPLATE="$OUTDIR/$NAME_SANITIZED.%(ext)s"
-else
-  OUTPUT_TEMPLATE="$OUTDIR/%(title)s.%(ext)s"
+usage() {
+  cat >&2 <<EOF
+Uso: $(basename "$0") <url> [nombre] [opciones]
+     $(basename "$0") -f <archivo> [opciones]
+
+Descarga el audio de videos de YouTube como WAV (lossless).
+
+Modos:
+  <url> [nombre]          Un solo video. Sin nombre, usa el título del video.
+  -f, --file <archivo>    Lista de videos, uno por línea (con nombre opcional):
+                            # comentario
+                            https://youtu.be/VIDEO1
+                            https://youtu.be/VIDEO2 mi-nombre
+
+Opciones:
+  -d, --dir <nombre>      Subdirectorio dentro de $OUTDIR
+                          (default: la raíz de raw/ en modo single;
+                           nombre de la lista sin extensión en modo batch)
+  -h, --help              Esta ayuda
+
+La salida se organiza así:
+  $OUTDIR/<subdir>/
+
+En modo batch se usa un .download-archive dentro del subdirectorio:
+los videos ya descargados se saltean, así se puede re-correr la lista.
+EOF
+  exit 1
+}
+
+# --- Parse args ---
+LIST_FILE=""
+SUBDIR=""
+URL=""
+NAME=""
+
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    -h|--help) usage ;;
+    -f|--file)
+      [ -n "${2:-}" ] || { echo "  ✗ $1 requiere un archivo" >&2; exit 1; }
+      LIST_FILE="$2"; shift 2 ;;
+    -d|--dir)
+      [ -n "${2:-}" ] || { echo "  ✗ $1 requiere un nombre" >&2; exit 1; }
+      SUBDIR="$2"; shift 2 ;;
+    -*)
+      echo "  ✗ Opción desconocida: $1" >&2; usage ;;
+    *)
+      if [ -z "$URL" ]; then URL="$1"
+      elif [ -z "$NAME" ]; then NAME="$1"
+      else echo "  ✗ Argumento inesperado: $1" >&2; usage
+      fi
+      shift ;;
+  esac
+done
+
+if [ -z "$URL" ] && [ -z "$LIST_FILE" ]; then
+  usage
+fi
+if [ -n "$URL" ] && [ -n "$LIST_FILE" ]; then
+  echo "  ✗ No se puede combinar <url> con -f" >&2
+  exit 1
 fi
 
-# --- Fast path: try without cookies (works for most videos) ---
+# --- Output directory ---
+MODE="single"
+if [ -n "$LIST_FILE" ]; then
+  MODE="batch"
+  [ -f "$LIST_FILE" ] || { echo "  ✗ No existe el archivo: $LIST_FILE" >&2; exit 1; }
+  # Default subdir: nombre de la lista sin extensión
+  if [ -z "$SUBDIR" ]; then
+    SUBDIR="$(basename "$LIST_FILE")"
+    SUBDIR="${SUBDIR%.*}"
+  fi
+fi
+
+TARGET_DIR="$OUTDIR"
+if [ -n "$SUBDIR" ]; then
+  TARGET_DIR="$OUTDIR/$(sanitize "$SUBDIR")"
+fi
+
+mkdir -p "$TARGET_DIR"
+if ! touch "$TARGET_DIR/.write-test" 2>/dev/null; then
+  echo "  ✗ No se puede escribir en $TARGET_DIR" >&2
+  exit 1
+fi
+rm -f "$TARGET_DIR/.write-test"
+
+# --- Download core: fast path + fallback con cookies ---
+_yt_dlp() {
+  uv tool run yt-dlp "$@" 2>&1
+}
+
 _fast_path() {
-  uv tool run yt-dlp --js-runtimes node \
+  _yt_dlp --js-runtimes node \
          --no-warnings \
+         --no-overwrites \
+         "${ARCHIVE_ARGS[@]}" \
          -x \
          --audio-format wav \
          --audio-quality 0 \
          -o "$OUTPUT_TEMPLATE" \
-         "$URL" 2>&1
+         "$1"
 }
 
-# --- Fallback: retry with cookies + JS challenge (videos that return 403) ---
+# Fallback: cookies + JS challenge (videos que devuelven 403)
 _fallback_with_cookies() {
-  # Buscar cookies de navegador flatpak (Brave, Chromium, Firefox)
   local COOKIE_SOURCE=""
   for src in \
     "brave:$HOME/.var/app/com.brave.Browser/config/BraveSoftware/Brave-Browser" \
@@ -86,40 +143,126 @@ _fallback_with_cookies() {
 
   echo "  (fallback: usando cookies de ${COOKIE_SOURCE%%:*})" >&2
 
-  uv tool run yt-dlp --js-runtimes node \
-         --remote-components ejs:github \
+  _yt_dlp --remote-components ejs:github \
          --cookies-from-browser "$COOKIE_SOURCE" \
          --no-warnings \
+         --no-overwrites \
+         "${ARCHIVE_ARGS[@]}" \
          -x \
          --audio-format wav \
          --audio-quality 0 \
          -o "$OUTPUT_TEMPLATE" \
-         "$URL" 2>&1
+         "$1"
 }
 
-echo "" >&2
-echo "  Descargando audio de: $URL" >&2
-echo "  Guardando en: $OUTDIR/" >&2
-echo "" >&2
+# Download un solo URL. Devuelve 0 si OK.
+download_one() {
+  local url="$1"
+  echo "" >&2
+  echo "  Descargando audio de: $url" >&2
+  echo "  Guardando en: $TARGET_DIR/" >&2
+  echo "" >&2
 
-if _fast_path; then
-  echo "" >&2
-  echo "  ✓ Listo." >&2
-  echo "" >&2
-else
-  # Fast path falló — reintentar con cookies si el error es 403 (YouTube anti-bot)
+  if _fast_path "$url"; then
+    echo "" >&2
+    echo "  ✓ Listo." >&2
+    return 0
+  fi
+
   echo "" >&2
   echo "  ⚠ Intento directo falló, probando con cookies de navegador..." >&2
   echo "" >&2
 
-  if _fallback_with_cookies; then
+  if _fallback_with_cookies "$url"; then
     echo "" >&2
     echo "  ✓ Listo (con cookies)." >&2
+    return 0
+  fi
+
+  echo "" >&2
+  echo "  ✗ No se pudo descargar: $url" >&2
+  return 1
+}
+
+# --- Ejecución ---
+FAILED=()
+TOTAL=0
+OK=0
+ARCHIVE_ARGS=()
+
+if [ "$MODE" = "single" ]; then
+  OUTPUT_TEMPLATE="$TARGET_DIR/$( [ -n "$NAME" ] && echo "$(sanitize "$NAME")" || echo '%(title)s' ).%(ext)s"
+  if download_one "$URL"; then OK=1; else FAILED+=("$URL"); fi
+  TOTAL=1
+else
+  ARCHIVE="$TARGET_DIR/.download-archive.txt"
+  ARCHIVE_ARGS=(--download-archive "$ARCHIVE")
+  OUTPUT_TEMPLATE="$TARGET_DIR/%(title)s.%(ext)s"
+
+  # Contar entradas válidas
+  while IFS= read -r line || [ -n "$line" ]; do
+    line="${line%%#*}"                       # comentarios
+    line="$(echo "$line" | sed 's/^[[:space:]]*//; s/[[:space:]]*$//')"
+    [ -z "$line" ] && continue
+    TOTAL=$((TOTAL + 1))
+  done < "$LIST_FILE"
+
+  echo "" >&2
+  echo "  Lista: $LIST_FILE ($TOTAL videos)" >&2
+  echo "  Destino: $TARGET_DIR/" >&2
+  echo "  Archivo de progreso: $ARCHIVE" >&2
+
+  i=0
+  while IFS= read -r line || [ -n "$line" ]; do
+    line="${line%%#*}"
+    line="$(echo "$line" | sed 's/^[[:space:]]*//; s/[[:space:]]*$//')"
+    [ -z "$line" ] && continue
+    i=$((i + 1))
+
+    entry_url="${line%%[[:space:]]*}"
+    entry_name=""
+    rest="${line#"$entry_url"}"
+    rest="$(echo "$rest" | sed 's/^[[:space:]]*//')"
+    [ -n "$rest" ] && entry_name="$(sanitize "$rest")"
+
+    OUTPUT_TEMPLATE="$TARGET_DIR/$( [ -n "$entry_name" ] && echo "$entry_name" || echo '%(title)s' ).%(ext)s"
+
     echo "" >&2
+    echo "  [$i/$TOTAL] $entry_url" >&2
+    if [ -n "$entry_name" ]; then
+      echo "        como: $entry_name" >&2
+    fi
+
+    if download_one "$entry_url"; then
+      OK=$((OK + 1))
+    else
+      FAILED+=("$entry_url")
+    fi
+  done < "$LIST_FILE"
+fi
+
+# --- Resumen ---
+echo "" >&2
+echo "  ─────────────────────────────────" >&2
+if [ "$MODE" = "batch" ]; then
+  echo "  Descargados: $OK/$TOTAL" >&2
+  if [ "${#FAILED[@]}" -gt 0 ]; then
+    echo "  Fallidos:" >&2
+    for u in "${FAILED[@]}"; do
+      echo "    - $u" >&2
+    done
+  fi
+else
+  if [ "$OK" -eq 1 ]; then
+    echo "  ✓ Descarga completa." >&2
   else
-    echo "" >&2
-    echo "  ✗ No se pudo descargar el audio." >&2
-    echo "" >&2
+    echo "  ✗ Descarga fallida." >&2
     exit 1
   fi
+fi
+echo "  ─────────────────────────────────" >&2
+echo "" >&2
+
+if [ "${#FAILED[@]}" -gt 0 ]; then
+  exit 1
 fi
