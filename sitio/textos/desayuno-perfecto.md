@@ -2,7 +2,7 @@
 title: "Desayuno perfecto"
 author: "Alejandra Kamiya"
 date: "2026-09-10"
-status: draft
+status: published
 description: "Una mujer prepara minuciosamente un desayuno perfecto en su casa de Tokio: caballa fresca del mercado de Tsukiji, arroz en remojo, miso shiru y té del primer brote, mientras imagina la mañana ideal de Hiro, su hijo, y de su marido."
 genre: "cuento"
 license: "Fragmento (derecho de cita)"

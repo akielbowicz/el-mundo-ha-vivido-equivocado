@@ -1,7 +1,7 @@
 ---
 title: "Episodio 05"
 date: "2026-09-10"
-status: draft
+status: published
 description: "Leemos 'Desayuno Perfecto' y 'Elefantes' de Alejandra Kamiya y 'Un lugar sobre los médanos' de Sylvia Iparraguirre"
 image: "/images/005.svg"
 image_alt: "Portada del episodio 05: una taza de café humeante sobre los médanos"
