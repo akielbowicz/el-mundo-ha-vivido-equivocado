@@ -16,9 +16,6 @@ call_lefthook()
   elif lefthook -h >/dev/null 2>&1
   then
     lefthook "$@"
-  elif /var/home/sasha/para/areas/dev/gh/ak/el-mundo-ha-vivido-equivocado/node_modules/lefthook-linux-x64/bin/lefthook -h >/dev/null 2>&1
-  then
-    /var/home/sasha/para/areas/dev/gh/ak/el-mundo-ha-vivido-equivocado/node_modules/lefthook-linux-x64/bin/lefthook "$@"
   else
     dir="$(git rev-parse --show-toplevel)"
     osArch=$(uname | tr '[:upper:]' '[:lower:]')
@@ -35,6 +32,7 @@ call_lefthook()
     elif test -f "$dir/node_modules/lefthook/bin/index.js"
     then
       "$dir/node_modules/lefthook/bin/index.js" "$@"
+    
     elif go tool lefthook -h >/dev/null 2>&1
     then
       go tool lefthook "$@"

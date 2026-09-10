@@ -14,3 +14,7 @@ separated/
 .dolt/
 *.db
 .beads-credential-key
+
+# Editor / linter artifacts
+.clj-kondo/
+.lsp/
