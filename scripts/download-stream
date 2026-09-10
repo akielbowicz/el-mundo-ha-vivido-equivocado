@@ -22,6 +22,7 @@ SCRIPT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 STREAM_URL="https://radio01.ferozo.com/proxy/ra01001031?mp=/stream"
 OUTDIR="${SCRIPT_DIR}/materiales/grabaciones"
 DURATION=3600
+NO_KILL=0
 
 # Notificación opcional de fallos (ntfy.sh): NTFY_URL=https://ntfy.sh/<topic>
 notify() {
@@ -39,6 +40,7 @@ Descarga un stream de radio con ffmpeg.
 Opciones:
   --duration N    Duración (ej: 1h, 30m, 5m30s, 3600, 5:30; defecto: 1h)
   --outdir DIR    Directorio de salida (defecto: \$PROJECT/materiales/grabaciones)
+  --no-kill       No matar instancias previas del stream (ni stales)
   --help, -h      Esta ayuda
 EOF
 }
@@ -57,6 +59,7 @@ while [[ $# -gt 0 ]]; do
   case "$1" in
     --duration) DURATION="$2"; shift 2 ;;
     --outdir)   OUTDIR="$2";   shift 2 ;;
+    --no-kill)  NO_KILL=1; shift ;;
     --help|-h)  usage_ok ;;
     *)          echo "  ✗ Argumento desconocido: $1" >&2; usage_err ;;
   esac
@@ -123,18 +126,32 @@ fi
 # Convertir a segundos para ffmpeg
 DURATION_SECS=$(duration_to_seconds "$DURATION")
 
-# Verificar que ffmpeg está instalado
-if ! command -v ffmpeg &>/dev/null; then
-  echo "  ✗ ffmpeg no está instalado. Instalá ffmpeg primero." >&2
-  exit 1
-fi
+# Verificar que ffmpeg y ffprobe están instalados (ffprobe se usa para
+# validar parciales y duración — sin él, el handler de error borraría
+# parciales válidos)
+for cmd in ffmpeg ffprobe; do
+  if ! command -v "$cmd" &>/dev/null; then
+    echo "  ✗ $cmd no está instalado. Instalá ffmpeg (incluye ffprobe) primero." >&2
+    exit 1
+  fi
+done
 
-# Matar cualquier ffmpeg anterior DEL STREAM (evita que una instancia stale
-# bloquee la próxima grabación: systemd no arranca un nuevo service si el
-# anterior sigue "activating"). Con -f scopeado a la URL del stream para NO
-# matar otros ffmpeg del sistema (encodings, transcodes, etc.)
-pkill -f "radio01.ferozo.com" 2>/dev/null || true
-sleep 1
+# Matar solo instancias STALE del stream. Una grabación legítima no puede
+# vivir más que DURATION_SECS + margen de timeout (900s) — así que cualquier
+# instancia más vieja que eso es stale por definición. Un pkill indiscrimiado
+# mataba grabaciones legítimas en ejecución (ej: timer de 18:45 matando una
+# corrida manual arrancada a las 18:00). El caso original era un stale de
+# 7 días, muy por encima de cualquier umbral dinámico.
+if [ "$NO_KILL" -eq 0 ]; then
+  STALE_THRESHOLD=$((DURATION_SECS + 960))
+  stale_pids=$(ps -eo pid=,etimes=,args= | awk -v max="$STALE_THRESHOLD" '/radio01\.ferozo\.com/ && $2 > max {print $1}')
+  if [ -n "$stale_pids" ]; then
+    kill $stale_pids 2>/dev/null || true
+    sleep 1
+    # -9 a sobrevivientes que ignoraron SIGTERM
+    kill -9 $stale_pids 2>/dev/null || true
+  fi
+fi
 
 mkdir -p "$OUTDIR"
 
@@ -153,9 +170,11 @@ echo "" >&2
 FFMPEG_TIMEOUT=$((DURATION_SECS + 900))
 set +e
 timeout "$FFMPEG_TIMEOUT" ffmpeg -y \
+  -nostdin \
   -reconnect 1 \
   -reconnect_streamed 1 \
   -reconnect_delay_max 10 \
+  -rw_timeout 15000000 \
   -i "$STREAM_URL" \
   -t "$DURATION_SECS" \
   -c copy \
@@ -170,18 +189,26 @@ if [ "$FFMPEG_EXIT" -eq 124 ]; then
   echo "  ⚠ Timeout (${FFMPEG_TIMEOUT}s) — conservando grabación parcial: $OUTFILE" >&2
   notify "download-stream: timeout — parcial conservado ($OUTFILE)"
 elif [ "$FFMPEG_EXIT" -ne 0 ] || [ ! -s "$OUTFILE" ]; then
-  echo "  ✗ Error grabando stream (exit $FFMPEG_EXIT). Eliminando archivo parcial." >&2
-  rm -f "$OUTFILE"
-  notify "download-stream: error grabando (exit $FFMPEG_EXIT)"
-  exit 1
+  # Conservar parciales con audio válido (ej: kill externo al minuto 45):
+  # borrarlos tira material irrecuperable. Solo borrar si <60s de audio.
+  PARTIAL_DUR=$(ffprobe -v error -show_entries format=duration -of csv=p=0 "$OUTFILE" 2>/dev/null | cut -d. -f1)
+  PARTIAL_DUR=${PARTIAL_DUR:-0}
+  if [ "$PARTIAL_DUR" -lt 60 ]; then
+    echo "  ✗ Error grabando stream (exit $FFMPEG_EXIT). Eliminando archivo parcial." >&2
+    rm -f "$OUTFILE"
+    notify "download-stream: error grabando (exit $FFMPEG_EXIT)"
+    exit 1
+  fi
+  echo "  ⚠ Error (exit $FFMPEG_EXIT) — conservando parcial de ${PARTIAL_DUR}s: $OUTFILE" >&2
+  notify "download-stream: error con parcial conservado (${PARTIAL_DUR}s, exit $FFMPEG_EXIT)"
 fi
 
 # Validación de duración — avisa si quedó corta (stream caído, reconnects, etc.)
-DURATION=$(ffprobe -v error -show_entries format=duration -of csv=p=0 "$OUTFILE" 2>/dev/null | cut -d. -f1)
-DURATION=${DURATION:-0}
-if [ "$DURATION" -lt $((DURATION_SECS * 90 / 100)) ]; then
-  echo "  ⚠ Grabación corta: ${DURATION}s de ${DURATION_SECS}s esperados — revisar antes de publicar" >&2
-  notify "download-stream: grabación corta (${DURATION}s de ${DURATION_SECS}s)"
+RECORDED_SECS=$(ffprobe -v error -show_entries format=duration -of csv=p=0 "$OUTFILE" 2>/dev/null | cut -d. -f1)
+RECORDED_SECS=${RECORDED_SECS:-0}
+if [ "$RECORDED_SECS" -lt $((DURATION_SECS * 90 / 100)) ]; then
+  echo "  ⚠ Grabación corta: ${RECORDED_SECS}s de ${DURATION_SECS}s esperados — revisar antes de publicar" >&2
+  notify "download-stream: grabación corta (${RECORDED_SECS}s de ${DURATION_SECS}s)"
 fi
 
 # Retención: mantener solo las últimas 12 grabaciones (el disco no es infinito)
