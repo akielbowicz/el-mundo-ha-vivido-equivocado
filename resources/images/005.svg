@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Portada 005.svg — El mundo ha vivido equivocado
+  Episodio: Episodio 05
+
+  Estructura (capas Inkscape, de abajo hacia arriba):
+    fondo       → gradiente base, reemplazable por cualquier treatment
+    marco       → borde interior fino
+    decoracion  → ZONA LIBRE: ilustración de la tapa (reemplazar los
+                  placeholders por la composición del episodio)
+    titulo      → título + autor (no mover de y=150/180 sin ajustar decoracion)
+    badge       → número de episodio
+
+  Paleta usada: noche-azul
+    fondo  #101c2e → #1a2c47
+    acento #8ab4d8 → #a8cce8
+  Contraste texto/fondo: 10.2:1 (WCAG AA ≥ 4.5:1)
+  Otras: oro-clasico, verde-yerba, noche-azul, vino-tinto, violeta, cobalto, ambar, rosa-bajo, salvia, terracota
+  Forzar una: pasale "palette=<nombre>" al script new-cover.mjs
+  Mantener contraste ≥ 4.5:1 (WCAG AA) si se ajustan colores a mano.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape" viewBox="0 0 400 400" width="400" height="400">
+  <title>Episodio 05</title>
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#101c2e"/>
+      <stop offset="100%" style="stop-color:#1a2c47"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#8ab4d8"/>
+      <stop offset="100%" style="stop-color:#a8cce8"/>
+    </linearGradient>
+  </defs>
+
+  <g inkscape:groupmode="layer" id="fondo" inkscape:label="fondo">
+    <rect width="400" height="400" rx="8" fill="url(#bg)"/>
+  </g>
+
+  <g inkscape:groupmode="layer" id="marco" inkscape:label="marco">
+    <rect x="20" y="20" width="360" height="360" rx="6" fill="none" stroke="url(#accent)" stroke-width="1.5" opacity="0.4"/>
+    <rect x="60" y="100" width="280" height="2" fill="url(#accent)" opacity="0.6"/>
+    <rect x="60" y="298" width="280" height="2" fill="url(#accent)" opacity="0.6"/>
+  </g>
+
+  <!-- Composición: 'Desayuno Perfecto' (taza humeante), 'Elefantes'
+       (elefante en silueta) y 'Un lugar sobre los médanos' (dunas). -->
+  <g inkscape:groupmode="layer" id="decoracion" inkscape:label="decoracion">
+    <!-- médanos de fondo -->
+    <path d="M 60 262 C 120 238 180 258 240 250 C 290 244 320 256 340 252 L 340 268 L 60 268 Z" fill="url(#accent)" opacity="0.12"/>
+    <!-- médano delantero -->
+    <path d="M 60 272 C 110 256 170 276 230 266 C 280 258 310 270 340 264 L 340 284 L 60 284 Z" fill="url(#accent)" opacity="0.2"/>
+
+    <!-- taza de café humeante -->
+    <path d="M 97 228 L 125 228 L 121 250 Q 120 253 116 253 L 106 253 Q 102 253 101 250 Z" fill="url(#accent)" opacity="0.9"/>
+    <path d="M 127 232 q 8 2 4 10 q -2 5 -7 4" fill="none" stroke="url(#accent)" stroke-width="3" stroke-linecap="round" opacity="0.9"/>
+    <ellipse cx="111" cy="255" rx="17" ry="3" fill="url(#accent)" opacity="0.6"/>
+    <path d="M 104 220 q 4 -6 0 -12 q -4 -6 0 -12" fill="none" stroke="url(#accent)" stroke-width="1.5" stroke-linecap="round" opacity="0.5"/>
+    <path d="M 114 222 q 4 -6 0 -12 q -4 -6 0 -10" fill="none" stroke="url(#accent)" stroke-width="1.5" stroke-linecap="round" opacity="0.5"/>
+
+    <!-- brillos -->
+    <text x="320" y="130" text-anchor="middle" fill="#a8cce8" font-family="sans-serif" font-size="12" opacity="0.3">✦</text>
+    <text x="76" y="150" text-anchor="middle" fill="#a8cce8" font-family="sans-serif" font-size="8" opacity="0.25">✦</text>
+  </g>
+
+  <g inkscape:groupmode="layer" id="titulo" inkscape:label="titulo">
+    <text x="200" y="150" text-anchor="middle" fill="url(#accent)" font-family="Georgia, serif" font-size="22" font-weight="bold">Episodio 05</text>
+    <text x="200" y="180" text-anchor="middle" fill="#a8cce8" font-family="Georgia, serif" font-size="11" opacity="0.7">Alejandra Kamiya · Sylvia Iparraguirre</text>
+    <!--
+      Si el título es largo, bajar font-size o partir en dos <text> (y=135 y y=160).
+      El <title> del episodio tiene regla a11y: mantener textos legibles.
+    -->
+  </g>
+
+  <g inkscape:groupmode="layer" id="badge" inkscape:label="badge">
+    <rect x="140" y="260" width="120" height="24" rx="12" fill="url(#accent)" opacity="0.2"/>
+    <text x="200" y="277" text-anchor="middle" fill="url(#accent)" font-family="sans-serif" font-size="11" font-weight="600">EPISODIO 5</text>
+  </g>
+</svg>
