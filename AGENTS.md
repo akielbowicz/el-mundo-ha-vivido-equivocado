@@ -29,7 +29,7 @@ Keep this managed block so 'openspec update' can refresh the instructions.
 | Interactividad | ClojureScript (via [Squint](https://github.com/squint-cljs/squint)) → vanilla JS |
 | Build pipeline | Node `.mjs` (scripts/) orquestado con `just` |
 | Audio | Bash (`scripts/download-*`, `to-mp3`, `trim-audio`, `separate-vocals`) |
-| OCR / extracción | Python (`scripts/textos-from-images.py`, `extra/libros-ocr/`) |
+| OCR / extracción | Python (`scripts/textos-from-images.py`) o agente CLI (`just new-texto-ia`) |
 | Build | `just build` (compile squint → `dist/`) |
 | Serve | `just serve` (serve on :8080) |
 | Lint / a11y | `html-validate` + `check-reader-mode.mjs` |
@@ -72,14 +72,16 @@ Keep this managed block so 'openspec update' can refresh the instructions.
 │   ├── global-player.html    # player global que inyecta inject-player.mjs
 │   ├── new-episode.mjs       # scaffolder interactivo para episodios
 │   ├── new-texto.mjs         # scaffolder interactivo para textos
-│   ├── new-texto-ia          # transcribe imágenes de libro vía agente CLI (skill transcribir-texto)
+│   ├── new-texto-ia          # pipeline: orden de imágenes → agente transcribe → verificación
+│   ├── order-images.mjs      # pasada de visión: orden de lectura de fotos de páginas
+│   ├── verify-texto.mjs      # verificación de transcripción: checks + OCR cruzado
 │   ├── verify-texto.mjs      # verifica transcripción: checks deterministas + OCR cruzado
 │   ├── inject-player.mjs     # inyecta global player en el HTML buildeado
 │   ├── check-reader-mode.mjs # valida compatibilidad con Firefox Reader Mode
 │   ├── check-js.mjs          # smoke test Playwright sobre dist/
 │   ├── check-epub.mjs        # valida EPUBs con epubcheck-ts
 │   ├── a11y-audit.mjs        # html-validate con reglas a11y sobre el built
-│   ├── textos-from-images.py # OCR (Gemini via OpenRouter): imágenes → sitio/textos/*.md
+│   ├── textos-from-images.py # OCR directo (Gemini via OpenRouter): imágenes → sitio/textos/*.md
 │   ├── download-audio        # bash: YouTube → WAV lossless
 │   ├── download-stream       # bash: graba stream de radio con ffmpeg (VM Oracle primaria; timers systemd)
 │   ├── check-stream-timer    # bash: chequea/resetea timer del stream (--vm = VM Oracle)
@@ -117,7 +119,7 @@ Keep this managed block so 'openspec update' can refresh the instructions.
 | `check` | todos los checks: check-html + check-a11y + check-js + check-epub + check-tests |
 | `new-episode` | scaffolder interactivo para nuevo episodio |
 | `new-texto` | scaffolder interactivo para nuevo texto |
-| `new-texto-ia DIR` | transcribe imágenes de libro a sitio/textos/ vía agente CLI (skill `transcribir-texto`) |
+| `new-texto-ia DIR` | pipeline completo: orden de imágenes → transcripción vía agente CLI (skill `transcribir-texto`) → verificación |
 | `verify-texto TEXT DIR` | verifica un texto transcrito (frontmatter, estructura, OCR cruzado) |
 | `publish-episodio` | publica próxima grabación de materiales/programas/ como GitHub Release |
 | `download-stream` | graba stream de radio (default 1h; `ARGS="--duration N"`) |
@@ -168,6 +170,15 @@ Keep this managed block so 'openspec update' can refresh the instructions.
 
 ## Notes
 
+- **Transcripción de textos desde fotos** (`materiales/raw/imagenes/textos/<dir>/`): usar
+  `just new-texto-ia <dir>`. Pipeline: fase 0 ordena las imágenes por visión (los nombres
+  pueden ser hashes sin orden); fase 1 transcribe un agente CLI con la skill
+  `.pi/skills/transcribir-texto` (default `openrouter/z-ai/glm-5.3-flash`); fase 2 verifica
+  (`scripts/verify-texto.mjs`): checks deterministas + re-OCR independiente por imagen (LCS,
+  detecta omisiones y alucinaciones). Flags: `SKIP_ORDER=1`, `SKIP_VERIFY=1`, `--model X`,
+  instrucciones extra como args posicionales. El output siempre queda en `status: draft`.
+  Alternativa directa sin agente: `scripts/textos-from-images.py` (una llamada por imagen,
+  concatena; sin verificación). Ambos sobreescriben `sitio/textos/<slug>.md` (está en git)
 - Los scripts Python del repo (`scripts/textos-from-images.py`, `extra/libros-ocr/`) usan solo stdlib — no requieren `requirements.txt`. Las dependencias pesadas (Demucs) se auto-instalan con `uv tool` desde `scripts/separate-vocals`
 - No borrar `package-lock.json` del repo (evita re-descargar todas las deps en cada CI run)
 - `just watch` recompila solo `.cljs` — cambios en `resources/` (HTML, CSS, CNAME) no se reflejan automáticamente. Usar `just build` manual o reiniciar watch
