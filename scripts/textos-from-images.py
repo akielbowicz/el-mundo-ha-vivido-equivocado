@@ -129,8 +129,19 @@ def slugify(text):
 
 
 TRANSCRIBE_PROMPT = (
-    "Transcribe TODO el texto de esta pagina de un libro EXACTAMENTE como esta escrito, "
-    "sin resumir, sin omitir nada. Devolve SOLO el texto transcrito completo."
+    "Transcribí TODO el texto de esta página de un libro EXACTAMENTE como está escrito, "
+    "sin resumir, sin omitir nada. Reglas de formato:\n"
+    "\n"
+    "- Devolvé markdown, NO texto plano: toda palabra o frase en cursiva en el libro "
+    "va entre asteriscos (ej: el *tatami*, el *natto*, los *ohashi*).\n"
+    "- Uní las palabras cortadas por guión al final de línea "
+    "(ej: 'desgar-/bado' → 'desgarbado').\n"
+    "- Separá los párrafos con una línea en blanco, respetando los del original.\n"
+    "- Mantené la puntuación original (signos de exclamación de apertura, comillas, dos puntos).\n"
+    "- NO incluyas números de página ni el título del cuento que aparece como encabezado.\n"
+    "- Si una línea es ilegible, transcribila igual marcándola con [ilegible].\n"
+    "\n"
+    "Devolvé SOLO el texto transcribido, sin comentarios."
 )
 
 METADATA_PROMPT = (
@@ -152,11 +163,11 @@ def process_directory(dir_path):
     """Process a single directory of images and create a markdown file."""
     print(f"\n  Processing: {dir_path.name}")
 
-    # Skip directories whose text was already extracted (match by name
-    # substring, conservative: e.g. dir "juego-de-cartas" vs existing
-    # "el-juego-de-cartas.md"). Delete the output to re-extract.
-    existing = {p.name for p in TEXTOS_DIR.glob("*.md")}
-    if any(dir_path.name in name for name in existing):
+    # Skip directories whose text was already extracted. Compare slugified
+    # names so accents don't defeat the match (dir "josé-vélez" vs file
+    # "jose-velez.md"). Delete the output to re-extract.
+    existing = {slugify(p.stem) for p in TEXTOS_DIR.glob("*.md")}
+    if slugify(dir_path.name) in existing:
         print(f"  Skip: {dir_path.name} — ya extraído en {TEXTOS_DIR}")
         return
 
@@ -187,7 +198,22 @@ def process_directory(dir_path):
         print("  !! No text extracted from any image")
         return
 
-    full_text = "\n\n".join(all_text_parts)
+    # Join pages: if a page ends mid-sentence (no closing punctuation),
+    # the paragraph continues on the next page — join without blank line.
+    def _join_pages(parts):
+        out = ""
+        for part in parts:
+            part = part.strip()
+            if not out:
+                out = part
+                continue
+            if out[-1] in ".!?:…”\"":
+                out += "\n\n" + part
+            else:
+                out += " " + part
+        return out
+
+    full_text = _join_pages(all_text_parts)
     print(f"  Total: {len(full_text)} chars across {len(all_text_parts)} pages")
 
     # Step 2: Extract metadata (send all images together)

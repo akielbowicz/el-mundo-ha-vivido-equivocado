@@ -43,5 +43,6 @@ BA = "BA"  # Buenos Aires (timezone test)
 edn = "edn"  # extensión de squint.edn (Edn data format)
 falso = "falso"
 falsos = "falsos"
+frase = "frase"
 transcrito = "transcrito"
 variante = "variante"
