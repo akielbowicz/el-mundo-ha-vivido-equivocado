@@ -1,0 +1,142 @@
+#!/usr/bin/env bash
+# new-texto-ia — transcribe un directorio de imágenes de libro a sitio/textos/
+# usando un agente CLI (pi) en modo no interactivo, con la skill transcribir-texto.
+#
+# Uso:
+#   scripts/new-texto-ia día-perfecto
+#   scripts/new-texto-ia día-perfecto --model openrouter/z-ai/glm-5.3
+#   scripts/new-texto-ia día-perfecto "ignorá las dos primeras páginas"
+#
+# Las imágenes viven en materiales/raw/imagenes/textos/<dir>/.
+# La skill vive en .pi/skills/transcribir-texto/ (reglas de formato, frontmatter).
+# El texto resultante sobreescribe sitio/textos/<slug>.md si ya existe (está en
+# git, se puede restaurar con git checkout).
+
+set -euo pipefail
+
+DEFAULT_MODEL="openrouter/z-ai/glm-5.3-flash"
+
+usage() {
+  echo "Uso: $0 <directorio> [--model <modelo>] [instrucciones extra...]" >&2
+  echo "" >&2
+  echo "Directorios disponibles:" >&2
+  ls materiales/raw/imagenes/textos/ >&2 2>/dev/null || echo "  (no hay materiales/raw/imagenes/textos/)" >&2
+}
+
+if [[ $# -lt 1 ]]; then
+  usage
+  exit 1
+fi
+
+DIR_NAME="$1"; shift
+
+# Flags propios (los restantes se tratan como instrucciones extra para el agente)
+MODEL="$DEFAULT_MODEL"
+EXTRA_ARGS=()
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --model)
+      MODEL="$2"; shift 2 ;;
+    --help|-h)
+      usage; exit 0 ;;
+    *)
+      EXTRA_ARGS+=("$1"); shift ;;
+  esac
+done
+
+DIR="materiales/raw/imagenes/textos/$DIR_NAME"
+SKILL=".pi/skills/transcribir-texto/SKILL.md"
+
+if [[ ! -d "$DIR" ]]; then
+  echo "✗ No existe $DIR" >&2
+  usage
+  exit 1
+fi
+
+if [[ ! -f "$SKILL" ]]; then
+  echo "✗ No existe $SKILL — corré esto desde la raíz del repo" >&2
+  exit 1
+fi
+
+# Precheck de credenciales: sin key, pi fallaría a mitad de la transcripción
+if [[ -z "${OPENROUTER_API_KEY:-}" ]] && \
+   ! python3 -c "import json,os; d=json.load(open(os.path.expanduser('~/.pi/agent/auth.json'))); exit(0 if d.get('openrouter',{}).get('key') else 1)" 2>/dev/null; then
+  echo "✗ No hay key de OpenRouter (env OPENROUTER_API_KEY o ~/.pi/agent/auth.json)" >&2
+  exit 1
+fi
+
+N_IMAGES=$(find "$DIR" -type f \( -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.png' -o -iname '*.webp' \) | wc -l)
+if [[ "$N_IMAGES" -eq 0 ]]; then
+  echo "✗ No hay imágenes en $DIR" >&2
+  exit 1
+fi
+
+# Aviso de overwrite (procede igual: el archivo está en git)
+TARGET_HINT=$(echo "$DIR_NAME" | tr '[:upper:]' '[:lower:]')
+for f in sitio/textos/*.md; do
+  if [[ "${f,,}" == *"$TARGET_HINT"* ]]; then
+    echo "⚠ Ya existe $f — va a ser sobreescrito (restaurable con git checkout)"
+    break
+  fi
+done
+
+EXTRA_TEXT=""
+if [[ ${#EXTRA_ARGS[@]} -gt 0 ]]; then
+  EXTRA_TEXT=$(printf '%s ' "${EXTRA_ARGS[@]}")
+  echo "→ Instrucciones extra: $EXTRA_TEXT"
+fi
+
+# Fase 0: orden de lectura de las imágenes (los nombres pueden no codificarlo)
+if [[ "${SKIP_ORDER:-0}" != "1" ]]; then
+  echo "→ Fase 0: determinando orden de lectura de las imágenes..."
+  if ! ORDER=$(node scripts/order-images.mjs "$DIR"); then
+    echo "✗ No se pudo determinar el orden de las imágenes" >&2
+    exit 1
+  fi
+  ORDER_LIST=$(echo "$ORDER" | xargs -n1 basename | paste -sd' ' -)
+  echo "→ Orden de lectura: $ORDER_LIST"
+  ORDER_TEXT="El orden de lectura de las imágenes (determinado previamente, respetalo) es: $ORDER_LIST."
+else
+  ORDER_TEXT="Determiná vos el orden de lectura de las imágenes: primero buscá el número de página impreso en cada una y, si no es visible, deducilo por continuidad del texto."
+fi
+
+echo "→ Transcribiendo $N_IMAGES imagen(es) de $DIR con $MODEL..."
+
+PROMPT="Transcribí el texto de las $N_IMAGES imágenes de $DIR y crealo en sitio/textos/ siguiendo la skill transcribir-texto. $ORDER_TEXT Si ya existe el archivo de ese texto, transcribí de nuevo desde las imágenes y sobreescribilo igual (está en git, se puede restaurar). No hagas commit ni push de nada. ${EXTRA_TEXT:+Instrucciones adicionales: ${EXTRA_TEXT}}"
+
+# Marcador para detectar qué archivos toca el agente
+MARKER=$(mktemp)
+trap 'rm -f "$MARKER"' EXIT
+
+if ! pi -p -a --no-session \
+  --skill "$SKILL" \
+  --model "$MODEL" \
+  "$PROMPT"; then
+  echo "✗ El agente terminó con error" >&2
+  exit 1
+fi
+
+# Postcheck: el agente tocó algo en sitio/textos/?
+CHANGED=$(find sitio/textos -name '*.md' -newer "$MARKER")
+rm -f "$MARKER"
+if [[ -z "$CHANGED" ]]; then
+  echo "⚠ El agente no modificó sitio/textos/ — revisá su salida" >&2
+  exit 1
+fi
+
+echo "✓ Archivos escritos:"
+echo "$CHANGED" | while read -r f; do
+  echo "  $(stat -c '%s bytes  %y' "$f" | cut -d. -f1)  $f"
+done
+git status --porcelain sitio/textos/ | sed 's/^/  git: /'
+
+# Fase 2: verificación (checks deterministas + OCR cruzado independiente)
+MD=$(echo "$CHANGED" | head -1)
+if [[ "${SKIP_VERIFY:-0}" != "1" ]]; then
+  echo ""
+  echo "→ Fase 2: verificación de $MD..."
+  if ! node scripts/verify-texto.mjs "$MD" "$DIR"; then
+    echo "✗ La verificación falló — revisar el texto contra las imágenes" >&2
+    exit 1
+  fi
+fi

@@ -72,6 +72,8 @@ Keep this managed block so 'openspec update' can refresh the instructions.
 │   ├── global-player.html    # player global que inyecta inject-player.mjs
 │   ├── new-episode.mjs       # scaffolder interactivo para episodios
 │   ├── new-texto.mjs         # scaffolder interactivo para textos
+│   ├── new-texto-ia          # transcribe imágenes de libro vía agente CLI (skill transcribir-texto)
+│   ├── verify-texto.mjs      # verifica transcripción: checks deterministas + OCR cruzado
 │   ├── inject-player.mjs     # inyecta global player en el HTML buildeado
 │   ├── check-reader-mode.mjs # valida compatibilidad con Firefox Reader Mode
 │   ├── check-js.mjs          # smoke test Playwright sobre dist/
@@ -115,6 +117,8 @@ Keep this managed block so 'openspec update' can refresh the instructions.
 | `check` | todos los checks: check-html + check-a11y + check-js + check-epub + check-tests |
 | `new-episode` | scaffolder interactivo para nuevo episodio |
 | `new-texto` | scaffolder interactivo para nuevo texto |
+| `new-texto-ia DIR` | transcribe imágenes de libro a sitio/textos/ vía agente CLI (skill `transcribir-texto`) |
+| `verify-texto TEXT DIR` | verifica un texto transcrito (frontmatter, estructura, OCR cruzado) |
 | `publish-episodio` | publica próxima grabación de materiales/programas/ como GitHub Release |
 | `download-stream` | graba stream de radio (default 1h; `ARGS="--duration N"`) |
 | `check-stream-timer` | verifica el timer del stream y lo resetea si está trabado (`--vm` = VM Oracle) |

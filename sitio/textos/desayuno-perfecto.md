@@ -10,8 +10,9 @@ tags:
   - cuento
 ---
 
-<!-- Fragmento: comienza en la página 5 del libro. Las primeras líneas de
-     la página 5 salen desenfocadas en las fotos y no pudieron transcribirse. -->
+<!-- Fragmento: comienza en la página 5 del libro. Entre el título y el arranque
+     del texto hay varias líneas que salen desenfocadas en la foto de la primera
+     página y no pudieron transcribirse con confianza. -->
 
 No vas a esperar a que se cuele la luz por la ventana. Vas a mirar a Takashi dormir a tu lado. Vas a pensar que es bueno que descanse porque lo espera un largo día de trabajo. Vas a levantarte del futón sin hacer ruido, y levísima vas a andar por el *tatami* hasta la cocina, donde te vas a vestir para no rasgar el sueño de papel de Hiro y de Takashi.
 
@@ -41,11 +42,11 @@ Vas a abrir el *natto*, y el paquete de *nori*, ese que compraste después de ah
 
 Hay algo de soberbia en este gesto y te vas a avergonzar, pero la idea de un desayuno perfecto va a volver a convencerte de que hiciste bien, de que un solo elemento de otra calidad echaría a perder el trabajo puesto en todos los demás.
 
-Por eso también vas a usar el té del primer brote, ese del sur del Japón. Vas a retirar el agua del fuego antes de hervir, vas a humedecer apenas las hojas y luego de echar el agua las vas a dejar reposar. Se van a desperezar y van a dejar salir su sabor, su perfume, su esencia verde en tu cocina gris. Vas a ir a la habitación de tu hijo. Vas a quedarte arrodillada junto al *futón* mirando su respiración. Podrías pasar todo el tiempo del mundo así. Qué egoísta. Podrías dejar que el desayuno se pudriera en la cocina, y el resto del mundo sin sentido se hiciera pedazos allá afuera, y seguir arrodillada junto al *futón* de Hiro. Como si fuera tuyo y no del mundo que lo espera y del que es un engranaje más.
+Por eso también vas a usar el té del primer brote, ese del sur del Japón. Vas a retirar el agua del fuego antes de hervir, vas a humedecer apenas las hojas y luego de echar el agua las vas a dejar reposar. Se van a desperezar y van a dejar salir su sabor, su perfume, su esencia verde en tu cocina gris. Vas a ir a la habitación de tu hijo. Vas a quedarte arrodillada junto al *futón* mirando su respiración. Podrías pasar todo el tiempo del mundo así. Qué egoísta. Podrías dejar que el desayuno se pudriera en la cocina, y el resto del mundo sin sentido se hiciera pedazos allí afuera, y seguir arrodillada junto al *futón* de Hiro. Como si fuera tuyo y no del mundo que lo espera y del que es un engranaje más.
 
-Vas a poner una mano en su pequeño hombro flaco. El niño va a decir "Hi" y le vas a responder con un tono de voz ni alto ni bajo que es la hora de levantarse.
+Vas a poner una mano en su pequeño hombro flaco. El niño va a decir “Hi” y le vas a responder con un tono de voz ni alto ni bajo que es la hora de levantarse.
 
-Él se va a restregar los ojos y va a decir "Sí, mamá" y luego se va a volver a tapar para remolonear un minuto más.
+Él se va a restregar los ojos y va a decir “Sí, mamá” y luego se va a volver a tapar para remolonear un minuto más.
 
 Luego vas a volver a la cocina y vas a escuchar cómo Hiro y tu marido se preparan para sus días llenos de obligaciones, como árboles llenos de frutos o de flores.
 
@@ -65,7 +66,7 @@ Vas a romper un huevo y lo vas a colocar en su bol. Un sol se va a esparcir por 
 
 Vas a ver a Hiro terminar de despertarse al masticar, y vas a percibir que se da cuenta de que éste es un desayuno perfecto. Tu marido va a comer hasta el último grano de arroz, lo último del natto, la última fibra de la caballa y va a asentir mientras lo hace.
 
-"*Oishi*", va a decir Hiro, y vas a estar satisfecha y vas a agradecer, inclinando apenas la cabeza y sonriendo más con los ojos que con los labios que no se despegan. "*Oishi*" va a repetir el niño, y vas a sentir un pez globo en el pecho. Tu marido va a volver a asentir.
+“*Oishi*”, va a decir Hiro, y vas a estar satisfecha y vas a agradecer, inclinando apenas la cabeza y sonriendo más con los ojos que con los labios que no se despegan. “*Oishi*” va a repetir el niño, y vas a sentir un pez globo en el pecho. Tu marido va a volver a asentir.
 
 La mesa va a quedar vacía. Sólo los bols, tazas, pequeños platos, vacíos como esqueletos. Y la flor, abierta como una boca que grita. Muda de sentido en su belleza.
 

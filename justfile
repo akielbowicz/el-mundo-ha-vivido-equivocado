@@ -73,6 +73,14 @@ publish-episodio NUM="":
 new-texto:
     node scripts/new-texto.mjs
 
+# Transcribe a book-image directory to sitio/textos/ via agentic CLI (skill transcribir-texto)
+new-texto-ia DIR *ARGS:
+    scripts/new-texto-ia {{DIR}} {{ARGS}}
+
+# Verify a transcribed texto: deterministic checks + independent OCR cross-check
+verify-texto TEXT DIR="":
+    node scripts/verify-texto.mjs {{TEXT}} {{DIR}}
+
 # Scaffold a numbered episode cover SVG (Inkscape/LLM-friendly layers)
 new-cover NUM="":
     node scripts/new-cover.mjs {{NUM}}
