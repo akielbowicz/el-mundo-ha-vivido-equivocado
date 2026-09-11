@@ -82,7 +82,10 @@ declare -a FILES
 for k in "${!FILES_MAP[@]}"; do
   FILES+=("$k:${FILES_MAP[$k]}")
 done
-mapfile -t FILES < <(sort -t: -k1,1n <<< "${FILES[*]}")
+# printf '%s\n' → una entrada por línea (con "${FILES[*]}" se colapsaban TODAS
+# las entradas en un solo elemento y el lookup de FILE/BNAME agarraba basura:
+# el WAV→MP3 nunca se disparaba y gh recibía rutas espaciadas corruptas)
+mapfile -t FILES < <(printf '%s\n' "${FILES[@]}" | sort -t: -k1,1n)
 
 # --- Elegir episodio ---
 if [ -z "$NUM" ]; then
