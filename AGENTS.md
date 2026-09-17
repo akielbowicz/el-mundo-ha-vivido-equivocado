@@ -69,6 +69,8 @@ Keep this managed block so 'openspec update' can refresh the instructions.
 │   ├── texto-template.html   # template HTML para textos
 │   ├── org-template.html     # template HTML para páginas .org
 │   ├── show-template.html    # template HTML para grillas del show
+│   ├── stream-check.html     # template de la página oculta de diagnóstico del stream
+│   ├── build-stream-check.mjs # inyecta STREAM_URL (de download-stream) en el template → dist/_stream-check/
 │   ├── global-player.html    # player global que inyecta inject-player.mjs
 │   ├── new-episode.mjs       # scaffolder interactivo para episodios
 │   ├── new-texto.mjs         # scaffolder interactivo para textos
@@ -130,6 +132,7 @@ Keep this managed block so 'openspec update' can refresh the instructions.
 | `build-show` | construye páginas de grillas (HTML + PDF) en dist/_show/ |
 | `clean-show` | rm -rf dist/_show/ |
 | `clean-org-pages` | borra páginas .org generadas antes de rebuild |
+| `clean-org-pages` | borra páginas .org generadas antes de rebuild |
 | `clean` | rm -rf dist node_modules |
 
 ## Lefthook hooks
@@ -183,6 +186,11 @@ Keep this managed block so 'openspec update' can refresh the instructions.
 - No borrar `package-lock.json` del repo (evita re-descargar todas las deps en cada CI run)
 - `just watch` recompila solo `.cljs` — cambios en `resources/` (HTML, CSS, CNAME) no se reflejan automáticamente. Usar `just build` manual o reiniciar watch
 - Para agregar interactividad: editar `src/core.cljs` → recompila solo
+- **Página oculta de diagnóstico del stream**: `just build` genera `dist/_stream-check/` a partir
+  de `scripts/stream-check.html` + `scripts/build-stream-check.mjs` (la `STREAM_URL` se lee de
+  `scripts/download-stream`, única fuente de verdad). Monitoreo en vivo de canales L/R con
+  Web Audio (vanilla JS). Excluida del sitemap (segmento con `_`), noindex y sin enlaces desde
+  el sitio. Útil para detectar canales muertos en el stream (ej: R en silencio)
 
 <!-- BEGIN BEADS INTEGRATION v:1 profile:minimal hash:7510c1e2 -->
 ## Beads Issue Tracker

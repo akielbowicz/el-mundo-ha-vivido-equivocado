@@ -22,6 +22,7 @@ build: bundle-js clean-org-pages
     node scripts/build-epub.mjs
     node scripts/build-org-pages.mjs
     node scripts/build-show.mjs
+    node scripts/build-stream-check.mjs
     cp resources/CNAME dist/
     node scripts/inject-player.mjs
     node scripts/build-sitemap.mjs

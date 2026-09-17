@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Diagnóstico de stream — canal L/R</title>
+  <meta name="description" content="Página interna de diagnóstico: monitoreo en vivo de los canales izquierdo y derecho del stream de radio.">
+  <style>
+    :root { color-scheme: dark; }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0 auto;
+      padding: 1.5rem 1rem 3rem;
+      max-width: 60rem;
+      font-family: system-ui, sans-serif;
+      background: #0d1117;
+      color: #e6edf3;
+      line-height: 1.5;
+    }
+    h1 { font-size: 1.4rem; margin: 0 0 .25rem; }
+    h2 { font-size: 1rem; margin: 1.5rem 0 .5rem; }
+    p.meta { color: #8b949e; font-size: .85rem; margin: 0 0 1.25rem; }
+    code { background: #161b22; padding: .1rem .35rem; border-radius: 4px; font-size: .85em; }
+    .controls {
+      display: flex; flex-wrap: wrap; gap: .75rem; align-items: center;
+      padding: .75rem; background: #161b22; border: 1px solid #30363d; border-radius: 8px;
+    }
+    button {
+      font: inherit; padding: .5rem 1rem; border-radius: 6px; cursor: pointer;
+      background: #238636; color: #fff; border: 1px solid #2ea043;
+    }
+    button:disabled { opacity: .5; cursor: default; }
+    label.volumen { display: flex; align-items: center; gap: .5rem; font-size: .9rem; color: #8b949e; }
+    input[type="range"] { accent-color: #238636; }
+    #estado { font-size: .9rem; color: #8b949e; margin: .75rem 0 0; }
+    .alerta {
+      display: none; margin: 1rem 0 0; padding: .75rem 1rem; border-radius: 8px;
+      border: 1px solid; font-size: .95rem;
+    }
+    .alerta.visible { display: block; }
+    #alerta-canal { border-color: #f85149; background: rgba(248, 81, 73, .1); color: #ffa198; }
+    #alerta-cors { border-color: #d29922; background: rgba(210, 153, 34, .1); color: #e3b341; }
+    .medidores { display: flex; flex-wrap: wrap; gap: 1rem; margin-top: .5rem; }
+    .medidor {
+      flex: 1 1 12rem; padding: .75rem 1rem; background: #161b22;
+      border: 1px solid #30363d; border-radius: 8px; font-variant-numeric: tabular-nums;
+    }
+    .medidor strong { display: block; font-size: .85rem; color: #8b949e; }
+    .medidor .nivel { font-size: 1.25rem; }
+    .medidor .pico { font-size: .8rem; color: #8b949e; }
+    canvas {
+      display: block; width: 100%; height: 120px; margin-top: .5rem;
+      background: #0d1117; border: 1px solid #30363d; border-radius: 8px;
+    }
+    .leyenda { font-size: .8rem; color: #8b949e; margin: .25rem 0 0; }
+    footer { margin-top: 2.5rem; font-size: .8rem; color: #8b949e; border-top: 1px solid #21262d; padding-top: 1rem; }
+  </style>
+</head>
+<body>
+<main>
+  <h1>Diagnóstico de stream</h1>
+  <p class="meta">Monitoreo en vivo del canal izquierdo/derecho del stream que graba <code>download-stream</code>. Análisis local en el navegador — el audio no se sube a ningún lado.</p>
+
+  <div class="controls">
+    <button id="btn-play" type="button">▶ Conectar y analizar</button>
+    <label class="volumen">Volumen
+      <input type="range" id="volumen" min="0" max="100" value="60">
+    </label>
+    <label class="volumen"><input type="checkbox" id="auto-ganancia" checked> auto-ganancia</label>
+  </div>
+  <p id="estado" aria-live="polite">Desconectado.</p>
+  <p id="alerta-canal" class="alerta" role="alert"></p>
+  <p id="alerta-cors" class="alerta" role="alert">
+    El stream se reproduce pero el análisis lee silencio total: probablemente el navegador
+    bloqueó el análisis por CORS (origen cruzado sin cabeceras <code>Access-Control-Allow-Origin</code>).
+    El monitoreo por auriculares sigue siendo confiable; los medidores no.
+  </p>
+
+  <section aria-label="Medidores de nivel">
+    <div class="medidores">
+      <div class="medidor"><strong>Izquierdo (L)</strong><span class="nivel" id="rms-l">—</span><br><span class="pico" id="pico-l">pico: —</span></div>
+      <div class="medidor"><strong>Derecho (R)</strong><span class="nivel" id="rms-r">—</span><br><span class="pico" id="pico-r">pico: —</span></div>
+      <div class="medidor"><strong>Balance L vs R</strong><span class="nivel" id="balance">—</span><br><span class="pico" id="balance-info">&gt; 6 dB = canal desbalanceado</span></div>
+    </div>
+  </section>
+
+  <h2>Onda izquierda (L)</h2>
+  <canvas id="onda-l" width="1600" height="140" role="img" aria-label="Forma de onda histórica del canal izquierdo"></canvas>
+  <p class="leyenda">Envolvente min/max (verde oscuro) y RMS (verde claro). Ventana: ~30 segundos.</p>
+
+  <h2>Onda derecha (R)</h2>
+  <canvas id="onda-r" width="1600" height="140" role="img" aria-label="Forma de onda histórica del canal derecho"></canvas>
+  <p class="leyenda">Si esta pista se ve plana mientras la izquierda tiene contenido, el stream está mandando silencio por la derecha.</p>
+
+  <h2>Diferencia (L − R)</h2>
+  <canvas id="onda-diff" width="1600" height="140" role="img" aria-label="Forma de onda histórica de la diferencia entre canales"></canvas>
+  <p class="leyenda">Contenido que suena por un solo canal. Un programa correctamente estéreo muestra poca diferencia; un canal muerto, muchísima.</p>
+
+  <footer>
+    <p>Página interna de diagnóstico — no indexada, sin enlaces desde el sitio.<br>
+    URL del stream tomada de <code>scripts/download-stream</code> en build time: <code id="stream-url"></code></p>
+  </footer>
+</main>
+
+  <!-- Elemento de audio: oculto, la UI es el botón de arriba -->
+  <audio id="stream-audio" crossorigin="anonymous" preload="none" hidden></audio>
+
+  <script>
+  (function () {
+    "use strict";
+    var STREAM_URL = "__STREAM_URL__";
+    var COLS = 1600; // columnas de historial por canvas
+
+    var audio = document.getElementById("stream-audio");
+    var btnPlay = document.getElementById("btn-play");
+    var volSlider = document.getElementById("volumen");
+    var chkGain = document.getElementById("auto-ganancia");
+    var estado = document.getElementById("estado");
+    var alertaCanal = document.getElementById("alerta-canal");
+    var alertaCors = document.getElementById("alerta-cors");
+
+    document.getElementById("stream-url").textContent = STREAM_URL;
+
+    audio.src = STREAM_URL;
+
+    var ctx = null, anaL, anaR, anaDiff, monitorGain;
+    var bufL, bufR, bufD;
+    var rafId = 0;
+    var writeIdx = 0;
+    var playingDesde = 0;
+
+    function hist() {
+      return {
+        min: new Float32Array(COLS),
+        max: new Float32Array(COLS),
+        rms: new Float32Array(COLS),
+        peakAll: 0
+      };
+    }
+    var histL = hist(), histR = hist(), histD = hist();
+
+    function initAudio() {
+      var AC = window.AudioContext || window.webkitAudioContext;
+      ctx = new AC();
+
+      var src = ctx.createMediaElementSource(audio);
+      var split = ctx.createChannelSplitter(2);
+      src.connect(split);
+
+      anaL = ctx.createAnalyser();
+      anaR = ctx.createAnalyser();
+      anaDiff = ctx.createAnalyser();
+      [anaL, anaR, anaDiff].forEach(function (a) {
+        a.fftSize = 2048;
+        a.smoothingTimeConstant = 0;
+      });
+      split.connect(anaL, 0, 0);
+      split.connect(anaR, 1, 0);
+
+      // Diferencia: L*1 + R*(-1)
+      var gL = ctx.createGain(), gR = ctx.createGain(), sum = ctx.createGain();
+      gL.gain.value = 1;
+      gR.gain.value = -1;
+      split.connect(gL, 0);
+      split.connect(gR, 1);
+      gL.connect(sum);
+      gR.connect(sum);
+      sum.connect(anaDiff);
+
+      // Monitoreo: el volumen se aplica DESPUÉS del análisis para que
+      // el slider no distorsione los medidores
+      monitorGain = ctx.createGain();
+      monitorGain.gain.value = Math.pow(volSlider.value / 100, 2);
+      src.connect(monitorGain);
+      monitorGain.connect(ctx.destination);
+
+      bufL = new Float32Array(anaL.fftSize);
+      bufR = new Float32Array(anaR.fftSize);
+      bufD = new Float32Array(anaDiff.fftSize);
+    }
+
+    function sample(ana, h, buf) {
+      ana.getFloatTimeDomainData(buf);
+      var mn = 1e9, mx = -1e9, sumsq = 0, i, v;
+      for (i = 0; i < buf.length; i++) {
+        v = buf[i];
+        if (v < mn) mn = v;
+        if (v > mx) mx = v;
+        sumsq += v * v;
+      }
+      var rms = Math.sqrt(sumsq / buf.length);
+      h.min[writeIdx] = mn;
+      h.max[writeIdx] = mx;
+      h.rms[writeIdx] = rms;
+      var p = Math.max(Math.abs(mn), Math.abs(mx));
+      if (p > h.peakAll) h.peakAll = p;
+      return { rms: rms, peak: p };
+    }
+
+    function db(x) {
+      return x > 1e-6 ? (20 * Math.log10(x)).toFixed(1) + " dB" : "−∞";
+    }
+
+    function draw(cv, h, color, colorRms, preScale) {
+      var g = cv.getContext("2d");
+      var W = cv.width, H = cv.height, mid = H / 2, amp = H / 2 - 6;
+      var scale = 1;
+      if (chkGain.checked && h.peakAll > 0.005) scale = 0.95 / h.peakAll;
+      g.fillStyle = "#0d1117";
+      g.fillRect(0, 0, W, H);
+      g.fillStyle = "#30363d";
+      g.fillRect(0, mid - 1, W, 2);
+      var x, i, mn, mx, y1, y2;
+      for (x = 0; x < W; x++) {
+        i = (writeIdx + 1 + x) % COLS;
+        mn = Math.max(-1, h.min[i] * scale * preScale);
+        mx = Math.min(1, h.max[i] * scale * preScale);
+        y1 = mid - mx * amp;
+        y2 = mid - mn * amp;
+        g.fillStyle = color;
+        g.fillRect(x, y1, 1, Math.max(1, y2 - y1));
+        g.fillStyle = colorRms;
+        g.fillRect(x, mid - h.rms[i] * scale * preScale * amp, 1, 2);
+      }
+    }
+
+    function drawAll() {
+      draw(document.getElementById("onda-l"), histL, "#238636", "#7ee787", 1);
+      draw(document.getElementById("onda-r"), histR, "#9e6a03", "#f0883e", 1);
+      draw(document.getElementById("onda-diff"), histD, "#8b1f2f", "#f85149", 0.5);
+    }
+
+    function updateMeters(mL, mR, mD) {
+      document.getElementById("rms-l").textContent = db(mL.rms) + " RMS";
+      document.getElementById("rms-r").textContent = db(mR.rms) + " RMS";
+      document.getElementById("pico-l").textContent = "pico: " + db(mL.peak);
+      document.getElementById("pico-r").textContent = "pico: " + db(mR.peak);
+
+      var diffDb = 20 * Math.log10(Math.max(mL.rms, 1e-6) / Math.max(mR.rms, 1e-6));
+      var balance = document.getElementById("balance");
+      if (!isFinite(diffDb)) {
+        balance.textContent = "—";
+      } else if (diffDb > 6) {
+        balance.textContent = "R débil (" + diffDb.toFixed(1) + " dB)";
+        balance.style.color = "#ffa198";
+      } else if (diffDb < -6) {
+        balance.textContent = "L débil (" + (-diffDb).toFixed(1) + " dB)";
+        balance.style.color = "#ffa198";
+      } else {
+        balance.textContent = "ok (" + diffDb.toFixed(1) + " dB)";
+        balance.style.color = "#7ee787";
+      }
+
+      // Alerta de canal muerto: solo tras 2 s reproduciendo
+      var conectado = !audio.paused && audio.currentTime > 0;
+      var silencioL = conectado && mL.rms < 1e-4 && mD.rms > 1e-3;
+      var silencioR = conectado && mR.rms < 1e-4 && mD.rms > 1e-3;
+      if (silencioR) {
+        alertaCanal.textContent = "⚠ El canal derecho (R) está en silencio mientras la diferencia (L−R) tiene contenido. El stream manda audio solo por la izquierda.";
+        alertaCanal.className = "alerta visible";
+      } else if (silencioL) {
+        alertaCanal.textContent = "⚠ El canal izquierdo (L) está en silencio mientras la diferencia (L−R) tiene contenido. El stream manda audio solo por la derecha.";
+        alertaCanal.className = "alerta visible";
+      } else {
+        alertaCanal.className = "alerta";
+      }
+
+      // Failsafe CORS: reproduce pero los tres analizadores leen cero
+      if (conectado && Date.now() - playingDesde > 3000 &&
+          mL.peak === 0 && mR.peak === 0 && mD.peak === 0) {
+        alertaCors.className = "alerta visible";
+      } else {
+        alertaCors.className = "alerta";
+      }
+    }
+
+    function loop() {
+      var mL = sample(anaL, histL, bufL);
+      var mR = sample(anaR, histR, bufR);
+      var mD = sample(anaDiff, histD, bufD);
+      writeIdx = (writeIdx + 1) % COLS;
+      drawAll();
+      updateMeters(mL, mR, mD);
+      rafId = requestAnimationFrame(loop);
+    }
+
+    function setEstado(txt) { estado.textContent = txt; }
+
+    btnPlay.addEventListener("click", function () {
+      if (!ctx) initAudio();
+      ctx.resume().then(function () {
+        if (audio.paused) {
+          playingDesde = Date.now();
+          audio.play().then(function () {
+            btnPlay.textContent = "⏸ Pausar";
+            if (!rafId) loop();
+          }).catch(function (err) {
+            setEstado("Error reproduciendo: " + err.message);
+          });
+        } else {
+          audio.pause();
+          btnPlay.textContent = "▶ Conectar y analizar";
+          cancelAnimationFrame(rafId);
+          rafId = 0;
+        }
+      });
+    });
+
+    volSlider.addEventListener("input", function () {
+      if (monitorGain) monitorGain.gain.value = Math.pow(volSlider.value / 100, 2);
+    });
+
+    audio.addEventListener("waiting", function () { setEstado("Buffering…"); });
+    audio.addEventListener("playing", function () { setEstado("En vivo — analizando."); });
+    audio.addEventListener("stalled", function () { setEstado("Stalled: el stream no responde, reintentando…"); });
+    audio.addEventListener("error", function () {
+      setEstado("Error de conexión con el stream (¿caído?). Reintentá con el botón.");
+    });
+  })();
+  </script>
+</body>
+</html>
