@@ -71,23 +71,19 @@
   </div>
   <p id="estado" aria-live="polite">Desconectado.</p>
   <p id="alerta-canal" class="alerta" role="alert"></p>
-  <p id="alerta-cors" class="alerta" role="alert">
-    El stream se reproduce pero el análisis lee silencio total: probablemente el navegador
-    bloqueó el análisis por CORS (origen cruzado sin cabeceras <code>Access-Control-Allow-Origin</code>).
-    El monitoreo por auriculares sigue siendo confiable; los medidores no.
-  </p>
+  <p id="alerta-cors" class="alerta" role="alert"></p>
 
   <section aria-label="Medidores de nivel">
     <div class="medidores">
-      <div class="medidor"><strong>Izquierdo (L)</strong><span class="nivel" id="rms-l">—</span><br><span class="pico" id="pico-l">pico: —</span></div>
-      <div class="medidor"><strong>Derecho (R)</strong><span class="nivel" id="rms-r">—</span><br><span class="pico" id="pico-r">pico: —</span></div>
+      <div class="medidor"><strong>Izquierdo (L)</strong><span class="nivel" id="rms-l">—</span><br><span class="pico" id="pico-l">pico (hold): —</span></div>
+      <div class="medidor"><strong>Derecho (R)</strong><span class="nivel" id="rms-r">—</span><br><span class="pico" id="pico-r">pico (hold): —</span></div>
       <div class="medidor"><strong>Balance L vs R</strong><span class="nivel" id="balance">—</span><br><span class="pico" id="balance-info">&gt; 6 dB = canal desbalanceado</span></div>
     </div>
   </section>
 
   <h2>Onda izquierda (L)</h2>
   <canvas id="onda-l" width="1600" height="140" role="img" aria-label="Forma de onda histórica del canal izquierdo"></canvas>
-  <p class="leyenda">Envolvente min/max (verde oscuro) y RMS (verde claro). Ventana: ~30 segundos.</p>
+  <p class="leyenda">Envolvente min/max (verde oscuro) y RMS (verde claro). Ventana: ~27 s a 60 Hz (menos en monitores de refresco alto).</p>
 
   <h2>Onda derecha (R)</h2>
   <canvas id="onda-r" width="1600" height="140" role="img" aria-label="Forma de onda histórica del canal derecho"></canvas>
@@ -129,6 +125,46 @@
     var rafId = 0;
     var writeIdx = 0;
     var playingDesde = 0;
+    var esMono = null; // null = desconocido, se detecta leyendo el header MP3
+    var holdL = 0, holdR = 0, holdD = 0; // peak-hold con decaimiento
+    var lastFrameT = 0;
+    var framesSilR = 0, framesSilL = 0; // sostenimiento para la alerta (evita parpadeo)
+
+    // Detecta si el stream es mono leyendo el channel mode del header MP3
+    // (3 frames seguidos consistentes). Evita falso "R en silencio" si la
+    // radio pasa el feed a mono (el splitter dejaría el canal R en silencio).
+    function detectarMono() {
+      if (!window.fetch || !window.ReadableStream) { esMono = false; return; }
+      fetch(STREAM_URL, { cache: "no-store" }).then(function (res) {
+        var reader = res.body.getReader();
+        function analizar(b) {
+          var modos = [], i;
+          for (i = 0; i + 3 < b.length; i++) {
+            // sync de 11 bits, descartando versión reservada (MPEG 2.5)
+            if (b[i] === 0xff && (b[i + 1] & 0xe0) === 0xe0 && (b[i + 1] & 0x18) !== 0x08) {
+              modos.push((b[i + 3] >> 6) & 0x03); // 3 = mono
+              if (modos.length === 8) break;
+            }
+          }
+          if (modos.length < 4) return null;
+          var primeros = modos.slice(0, 4);
+          var iguales = primeros.every(function (m) { return m === primeros[0]; });
+          return iguales ? primeros[0] : null;
+        }
+        function leer(chunk) {
+          if (chunk.done || !chunk.value) return;
+          var veredicto = analizar(chunk.value);
+          if (veredicto !== null) {
+            esMono = veredicto === 3;
+            reader.cancel().catch(function () {});
+            return;
+          }
+          reader.read().then(leer).catch(function () {});
+        }
+        reader.read().then(leer).catch(function () {});
+      }).catch(function () { esMono = false; });
+    }
+    detectarMono();
 
     function hist() {
       return {
@@ -202,65 +238,93 @@
       return x > 1e-6 ? (20 * Math.log10(x)).toFixed(1) + " dB" : "−∞";
     }
 
-    function draw(cv, h, color, colorRms, preScale) {
-      var g = cv.getContext("2d");
+    var cvL = document.getElementById("onda-l");
+    var cvR = document.getElementById("onda-r");
+    var cvD = document.getElementById("onda-diff");
+    var gLcv = cvL.getContext("2d");
+    var gRcv = cvR.getContext("2d");
+    var gDcv = cvD.getContext("2d");
+
+    function draw(cv, g, h, color, colorRms, preScale) {
       var W = cv.width, H = cv.height, mid = H / 2, amp = H / 2 - 6;
       var scale = 1;
       if (chkGain.checked && h.peakAll > 0.005) scale = 0.95 / h.peakAll;
+      var x, i, mn, mx, y1, y2;
       g.fillStyle = "#0d1117";
       g.fillRect(0, 0, W, H);
       g.fillStyle = "#30363d";
       g.fillRect(0, mid - 1, W, 2);
-      var x, i, mn, mx, y1, y2;
+      g.fillStyle = color;
       for (x = 0; x < W; x++) {
         i = (writeIdx + 1 + x) % COLS;
         mn = Math.max(-1, h.min[i] * scale * preScale);
         mx = Math.min(1, h.max[i] * scale * preScale);
         y1 = mid - mx * amp;
         y2 = mid - mn * amp;
-        g.fillStyle = color;
         g.fillRect(x, y1, 1, Math.max(1, y2 - y1));
-        g.fillStyle = colorRms;
+      }
+      g.fillStyle = colorRms;
+      for (x = 0; x < W; x++) {
+        i = (writeIdx + 1 + x) % COLS;
         g.fillRect(x, mid - h.rms[i] * scale * preScale * amp, 1, 2);
       }
     }
 
     function drawAll() {
-      draw(document.getElementById("onda-l"), histL, "#238636", "#7ee787", 1);
-      draw(document.getElementById("onda-r"), histR, "#9e6a03", "#f0883e", 1);
-      draw(document.getElementById("onda-diff"), histD, "#8b1f2f", "#f85149", 0.5);
+      draw(cvL, gLcv, histL, "#238636", "#7ee787", 1);
+      draw(cvR, gRcv, histR, "#9e6a03", "#f0883e", 1);
+      draw(cvD, gDcv, histD, "#8b1f2f", "#f85149", 0.5);
     }
 
     function updateMeters(mL, mR, mD) {
       document.getElementById("rms-l").textContent = db(mL.rms) + " RMS";
       document.getElementById("rms-r").textContent = db(mR.rms) + " RMS";
-      document.getElementById("pico-l").textContent = "pico: " + db(mL.peak);
-      document.getElementById("pico-r").textContent = "pico: " + db(mR.peak);
+      document.getElementById("pico-l").textContent = "pico (hold): " + db(holdL);
+      document.getElementById("pico-r").textContent = "pico (hold): " + db(holdR);
 
-      var diffDb = 20 * Math.log10(Math.max(mL.rms, 1e-6) / Math.max(mR.rms, 1e-6));
       var balance = document.getElementById("balance");
-      if (!isFinite(diffDb)) {
-        balance.textContent = "—";
-      } else if (diffDb > 6) {
-        balance.textContent = "R débil (" + diffDb.toFixed(1) + " dB)";
-        balance.style.color = "#ffa198";
-      } else if (diffDb < -6) {
-        balance.textContent = "L débil (" + (-diffDb).toFixed(1) + " dB)";
-        balance.style.color = "#ffa198";
+      if (mL.rms < 1e-6 && mR.rms < 1e-6) {
+        balance.textContent = "silencio total";
+        balance.style.color = "#8b949e";
       } else {
-        balance.textContent = "ok (" + diffDb.toFixed(1) + " dB)";
-        balance.style.color = "#7ee787";
+        var diffDb = 20 * Math.log10(Math.max(mL.rms, 1e-6) / Math.max(mR.rms, 1e-6));
+        if (diffDb > 60) {
+          balance.textContent = "R sin señal";
+          balance.style.color = "#ffa198";
+        } else if (diffDb < -60) {
+          balance.textContent = "L sin señal";
+          balance.style.color = "#ffa198";
+        } else if (diffDb > 6) {
+          balance.textContent = "R débil (" + diffDb.toFixed(1) + " dB)";
+          balance.style.color = "#ffa198";
+        } else if (diffDb < -6) {
+          balance.textContent = "L débil (" + (-diffDb).toFixed(1) + " dB)";
+          balance.style.color = "#ffa198";
+        } else {
+          balance.textContent = "ok (" + diffDb.toFixed(1) + " dB)";
+          balance.style.color = "#7ee787";
+        }
       }
 
-      // Alerta de canal muerto: solo tras 2 s reproduciendo
+      // Alerta de canal muerto: solo tras 2 s reproduciendo y ~1 s sostenido
+      // (el nivel de un canal semi-muerto puede rozar el umbral y parpadear)
       var conectado = !audio.paused && audio.currentTime > 0;
       var silencioL = conectado && mL.rms < 1e-4 && mD.rms > 1e-3;
       var silencioR = conectado && mR.rms < 1e-4 && mD.rms > 1e-3;
-      if (silencioR) {
-        alertaCanal.textContent = "⚠ El canal derecho (R) está en silencio mientras la diferencia (L−R) tiene contenido. El stream manda audio solo por la izquierda.";
-        alertaCanal.className = "alerta visible";
-      } else if (silencioL) {
-        alertaCanal.textContent = "⚠ El canal izquierdo (L) está en silencio mientras la diferencia (L−R) tiene contenido. El stream manda audio solo por la derecha.";
+      framesSilL = silencioL ? framesSilL + 1 : 0;
+      framesSilR = silencioR ? framesSilR + 1 : 0;
+      var mensaje = "";
+      if (conectado && esMono) {
+        if (mL.rms > 1e-3) {
+          mensaje = "ℹ El stream es MONO (un canal): la comparación L/R no aplica; el audio se monitorea por el canal izquierdo.";
+        }
+      } else if (framesSilR > 60) {
+        mensaje = "⚠ El canal derecho (R) está en silencio mientras la diferencia (L−R) tiene contenido. El stream manda audio solo por la izquierda.";
+      } else if (framesSilL > 60) {
+        mensaje = "⚠ El canal izquierdo (L) está en silencio mientras la diferencia (L−R) tiene contenido. El stream manda audio solo por la derecha.";
+      }
+      if (mensaje) {
+        alertaCanal.textContent = mensaje;
         alertaCanal.className = "alerta visible";
       } else {
         alertaCanal.className = "alerta";
@@ -269,6 +333,7 @@
       // Failsafe CORS: reproduce pero los tres analizadores leen cero
       if (conectado && Date.now() - playingDesde > 3000 &&
           mL.peak === 0 && mR.peak === 0 && mD.peak === 0) {
+        alertaCors.textContent = "El stream se reproduce pero el análisis lee silencio total: probablemente el navegador bloqueó el análisis por CORS (origen cruzado sin cabeceras Access-Control-Allow-Origin). El monitoreo por auriculares sigue siendo confiable; los medidores no.";
         alertaCors.className = "alerta visible";
       } else {
         alertaCors.className = "alerta";
@@ -279,6 +344,13 @@
       var mL = sample(anaL, histL, bufL);
       var mR = sample(anaR, histR, bufR);
       var mD = sample(anaDiff, histD, bufD);
+      // Peak-hold con decaimiento (~ -2.5 dB/s), independiente del refresco
+      var now = performance.now();
+      var decaimiento = lastFrameT ? Math.pow(0.995, (now - lastFrameT) / 16.7) : 1;
+      lastFrameT = now;
+      holdL = Math.max(mL.peak, holdL * decaimiento);
+      holdR = Math.max(mR.peak, holdR * decaimiento);
+      holdD = Math.max(mD.peak, holdD * decaimiento);
       writeIdx = (writeIdx + 1) % COLS;
       drawAll();
       updateMeters(mL, mR, mD);
@@ -292,6 +364,8 @@
       ctx.resume().then(function () {
         if (audio.paused) {
           playingDesde = Date.now();
+          // Reintento tras error: forzar reconexión del src fallido
+          if (audio.error) audio.load();
           audio.play().then(function () {
             btnPlay.textContent = "⏸ Pausar";
             if (!rafId) loop();
@@ -315,6 +389,10 @@
     audio.addEventListener("playing", function () { setEstado("En vivo — analizando."); });
     audio.addEventListener("stalled", function () { setEstado("Stalled: el stream no responde, reintentando…"); });
     audio.addEventListener("error", function () {
+      // Cortar el loop: si sigue corriendo, pisa el historial con ceros y
+      // destruye la evidencia del problema
+      cancelAnimationFrame(rafId);
+      rafId = 0;
       setEstado("Error de conexión con el stream (¿caído?). Reintentá con el botón.");
     });
   })();
