@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Portada 007.svg — El mundo ha vivido equivocado
+  Episodio: Episodio 07
+
+  Estructura (capas Inkscape, de abajo hacia arriba):
+    fondo       → gradiente base, reemplazable por cualquier treatment
+    marco       → borde interior fino
+    decoracion  → ZONA LIBRE: ilustración de la tapa (reemplazar los
+                  placeholders por la composición del episodio)
+    titulo      → título + autor (no mover de y=150/180 sin ajustar decoracion)
+    badge       → número de episodio
+
+  Paleta usada: vino-tinto
+    fondo  #2e1015 → #471a20
+    acento #d8a8a8 → #e8c0c0
+  Contraste texto/fondo: 10.6:1 (WCAG AA ≥ 4.5:1)
+  Otras: oro-clasico, verde-yerba, noche-azul, vino-tinto, violeta, cobalto, ambar, rosa-bajo, salvia, terracota
+  Forzar una: pasale "palette=<nombre>" al script new-cover.mjs
+  Mantener contraste ≥ 4.5:1 (WCAG AA) si se ajustan colores a mano.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape" viewBox="0 0 400 400" width="400" height="400">
+  <title>Episodio 07</title>
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#2e1015"/>
+      <stop offset="100%" style="stop-color:#471a20"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#d8a8a8"/>
+      <stop offset="100%" style="stop-color:#e8c0c0"/>
+    </linearGradient>
+  </defs>
+
+  <g inkscape:groupmode="layer" id="fondo" inkscape:label="fondo">
+    <rect width="400" height="400" rx="8" fill="url(#bg)"/>
+  </g>
+
+  <g inkscape:groupmode="layer" id="marco" inkscape:label="marco">
+    <rect x="20" y="20" width="360" height="360" rx="6" fill="none" stroke="url(#accent)" stroke-width="1.5" opacity="0.4"/>
+    <rect x="60" y="100" width="280" height="2" fill="url(#accent)" opacity="0.6"/>
+    <rect x="60" y="298" width="280" height="2" fill="url(#accent)" opacity="0.6"/>
+  </g>
+
+  <!-- Ilustración: tres zonas — el ojo (Cuestión de mirada) arriba,
+       dos casas vecinas con ventanas encendidas (Mis vecinos) al medio,
+       la línea de la cancha con la pelota (Un día en la cancha) abajo.
+       Línea fina en color acento sobre fondo vino-tinto. -->
+  <g inkscape:groupmode="layer" id="decoracion" inkscape:label="decoracion">
+    <!-- el ojo -->
+    <path d="M 158 218 Q 200 194 242 218 Q 200 242 158 218 Z" fill="none" stroke="url(#accent)" stroke-width="2" opacity="0.85" stroke-linejoin="round"/>
+    <circle cx="200" cy="218" r="10" fill="none" stroke="url(#accent)" stroke-width="1.6" opacity="0.8"/>
+    <circle cx="200" cy="218" r="4.5" fill="#e8c0c0" opacity="0.8"/>
+    <circle cx="203.5" cy="214.5" r="1.4" fill="#e8c0c0" opacity="0.9"/>
+    <line x1="178" y1="203" x2="174" y2="197" stroke="url(#accent)" stroke-width="1.2" opacity="0.45" stroke-linecap="round"/>
+    <line x1="196" y1="199" x2="195" y2="192" stroke="url(#accent)" stroke-width="1.2" opacity="0.45" stroke-linecap="round"/>
+    <line x1="214" y1="199" x2="216" y2="192" stroke="url(#accent)" stroke-width="1.2" opacity="0.45" stroke-linecap="round"/>
+    <!-- las casas vecinas -->
+    <path d="M 128 278 L 128 256 L 146 244 L 164 256 L 164 278 Z" fill="none" stroke="url(#accent)" stroke-width="1.8" opacity="0.75" stroke-linejoin="round"/>
+    <rect x="140" y="262" width="12" height="12" fill="url(#accent)" opacity="0.55"/>
+    <path d="M 236 278 L 236 256 L 254 244 L 272 256 L 272 278 Z" fill="none" stroke="url(#accent)" stroke-width="1.8" opacity="0.75" stroke-linejoin="round"/>
+    <rect x="248" y="262" width="12" height="12" fill="url(#accent)" opacity="0.55"/>
+    <!-- la mirada entre ventanas -->
+    <line x1="157" y1="268" x2="186" y2="268" stroke="url(#accent)" stroke-width="1" opacity="0.35" stroke-dasharray="3 4" stroke-linecap="round"/>
+    <line x1="214" y1="268" x2="243" y2="268" stroke="url(#accent)" stroke-width="1" opacity="0.35" stroke-dasharray="3 4" stroke-linecap="round"/>
+    <!-- la cancha: línea, marcas y pelota -->
+    <line x1="70" y1="292" x2="330" y2="292" stroke="url(#accent)" stroke-width="1.4" opacity="0.5"/>
+    <line x1="118" y1="289" x2="118" y2="295" stroke="url(#accent)" stroke-width="1.2" opacity="0.45"/>
+    <line x1="282" y1="289" x2="282" y2="295" stroke="url(#accent)" stroke-width="1.2" opacity="0.45"/>
+    <circle cx="200" cy="287" r="5.5" fill="none" stroke="url(#accent)" stroke-width="1.6" opacity="0.85"/>
+    <path d="M 200 284.5 L 202.6 286.4 L 201.6 289.4 L 198.4 289.4 L 197.4 286.4 Z" fill="url(#accent)" opacity="0.7"/>
+  </g>
+
+  <g inkscape:groupmode="layer" id="titulo" inkscape:label="titulo">
+    <text x="200" y="150" text-anchor="middle" fill="url(#accent)" font-family="Georgia, serif" font-size="22" font-weight="bold">Episodio 07</text>
+    <text x="200" y="180" text-anchor="middle" fill="#e8c0c0" font-family="Georgia, serif" font-size="10" opacity="0.7">Fabián Casas · Mariana Enríquez · Alejandra Zina</text>
+    <!--
+      Si el título es largo, bajar font-size o partir en dos <text> (y=135 y y=160).
+      El <title> del episodio tiene regla a11y: mantener textos legibles.
+    -->
+  </g>
+
+  <g inkscape:groupmode="layer" id="badge" inkscape:label="badge">
+    <rect x="140" y="310" width="120" height="24" rx="12" fill="url(#accent)" opacity="0.2"/>
+    <text x="200" y="327" text-anchor="middle" fill="url(#accent)" font-family="sans-serif" font-size="11" font-weight="600">EPISODIO 7</text>
+  </g>
+</svg>
