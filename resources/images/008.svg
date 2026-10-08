@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Portada 008.svg — El mundo ha vivido equivocado
+  Episodio: Episodio 08
+
+  Estructura (capas Inkscape, de abajo hacia arriba):
+    fondo       → gradiente base, reemplazable por cualquier treatment
+    marco       → borde interior fino
+    decoracion  → ZONA LIBRE: ilustración de la tapa (reemplazar los
+                  placeholders por la composición del episodio)
+    titulo      → título + autor (no mover de y=150/180 sin ajustar decoracion)
+    badge       → número de episodio
+
+  Paleta usada: terracota
+    fondo  #301b12 → #4a2a1c
+    acento #e0a888 → #eec0a4
+  Contraste texto/fondo: 9.8:1 (WCAG AA ≥ 4.5:1)
+  Otras: oro-clasico, verde-yerba, noche-azul, vino-tinto, violeta, cobalto, ambar, rosa-bajo, salvia, terracota
+  Forzar una: pasale "palette=<nombre>" al script new-cover.mjs
+  Mantener contraste ≥ 4.5:1 (WCAG AA) si se ajustan colores a mano.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape" viewBox="0 0 400 400" width="400" height="400">
+  <title>Episodio 08</title>
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#301b12"/>
+      <stop offset="100%" style="stop-color:#4a2a1c"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#e0a888"/>
+      <stop offset="100%" style="stop-color:#eec0a4"/>
+    </linearGradient>
+  </defs>
+
+  <g inkscape:groupmode="layer" id="fondo" inkscape:label="fondo">
+    <rect width="400" height="400" rx="8" fill="url(#bg)"/>
+  </g>
+
+  <g inkscape:groupmode="layer" id="marco" inkscape:label="marco">
+    <rect x="20" y="20" width="360" height="360" rx="6" fill="none" stroke="url(#accent)" stroke-width="1.5" opacity="0.4"/>
+    <rect x="60" y="100" width="280" height="2" fill="url(#accent)" opacity="0.6"/>
+    <rect x="60" y="298" width="280" height="2" fill="url(#accent)" opacity="0.6"/>
+  </g>
+
+  <!-- ZONA LIBRE para ilustración: este grupo es el que un LLM (o vos en
+       Inkscape) reemplaza por la composición del episodio. -->
+  <g inkscape:groupmode="layer" id="decoracion" inkscape:label="decoracion">
+    <!-- rayas de tigre, costados -->
+    <g stroke="#eec0a4" stroke-width="3" fill="none" stroke-linecap="round" opacity="0.45">
+      <path d="M 92 210 Q 104 216 110 228"/>
+      <path d="M 88 228 Q 102 236 106 250"/>
+      <path d="M 92 246 Q 104 252 108 266"/>
+      <path d="M 308 210 Q 296 216 290 228"/>
+      <path d="M 312 228 Q 298 236 294 250"/>
+      <path d="M 308 246 Q 296 252 292 266"/>
+    </g>
+    <!-- ojo: contorno almendrado -->
+    <path d="M 128 216 Q 200 178 272 216 Q 200 254 128 216 Z" fill="#241308" stroke="#eec0a4" stroke-width="2"/>
+    <!-- iris + pupila vertical (felina) -->
+    <circle cx="200" cy="216" r="24" fill="#eec0a4" opacity="0.85"/>
+    <ellipse cx="200" cy="216" rx="7" ry="20" fill="#241308"/>
+    <circle cx="194" cy="209" r="3" fill="#f7e5d0" opacity="0.9"/>
+    <!-- cerco de ladrillos -->
+    <g fill="#eec0a4" opacity="0.28">
+      <rect x="88"  y="312" width="56" height="16" rx="1.5"/>
+      <rect x="148" y="312" width="56" height="16" rx="1.5"/>
+      <rect x="208" y="312" width="56" height="16" rx="1.5"/>
+      <rect x="268" y="312" width="56" height="16" rx="1.5"/>
+      <rect x="118" y="332" width="56" height="16" rx="1.5"/>
+      <rect x="178" y="332" width="56" height="16" rx="1.5"/>
+      <rect x="238" y="332" width="56" height="16" rx="1.5"/>
+    </g>
+    <!-- hilo rojo que gotea de la junta del muro -->
+    <g fill="#d95f4a">
+      <rect x="206" y="312" width="3" height="26" opacity="0.9"/>
+      <circle cx="207.5" cy="341" r="4.5" opacity="0.9"/>
+      <ellipse cx="207.5" cy="352" rx="16" ry="3" opacity="0.55"/>
+    </g>
+  </g>
+
+  <g inkscape:groupmode="layer" id="titulo" inkscape:label="titulo">
+    <text x="200" y="150" text-anchor="middle" fill="url(#accent)" font-family="Georgia, serif" font-size="22" font-weight="bold">Episodio 08</text>
+    <text x="200" y="180" text-anchor="middle" fill="#eec0a4" font-family="Georgia, serif" font-size="11" opacity="0.7">Fray Mocho · Horacio Quiroga</text>
+    <!--
+      Si el título es largo, bajar font-size o partir en dos <text> (y=135 y y=160).
+      El <title> del episodio tiene regla a11y: mantener textos legibles.
+    -->
+  </g>
+
+  <g inkscape:groupmode="layer" id="badge" inkscape:label="badge">
+    <rect x="140" y="260" width="120" height="24" rx="12" fill="url(#accent)" opacity="0.2"/>
+    <text x="200" y="277" text-anchor="middle" fill="url(#accent)" font-family="sans-serif" font-size="11" font-weight="600">EPISODIO 8</text>
+  </g>
+</svg>

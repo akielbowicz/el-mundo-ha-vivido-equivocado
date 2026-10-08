@@ -1,0 +1,28 @@
+#+TITLE: Grilla de programa — Episodio 8
+#+DATE: 2026-10-08
+#+AUTHOR: Sasha
+
+* Escaleta
+
+Dos cuentos: el fraude simpático de Fray Mocho y el terror doméstico de Quiroga.
+Ambos giran alrededor de la mirada: el miedo que se disimula, los ojos fijos en los ladrillos.
+
+| Bloque | Duración | Sección | Contenido |
+|--------+----------+---------+-----------|
+|      1 | 1:00 | Cortina de apertura | Saludo + presentación. Cortina: cortina-intro (fade in, fade out) |
+|      2 | 3:00 | Introducción | Fray Mocho (José S. Álvarez). El cazador de tigres: un tipo que nunca cazó un tigre y su estadística de los García |
+|      3 | 8:00 | Lectura 1 | Lectura de El cazador de tigres. Bump musical en pausa |
+|      4 | 8:00 | Comentario 1 | Humor rioplatense, la anécdota como diálogo. El miedo como tema: "el tigre le dispara al hombre". La nota al pie y el chirlo |
+|      5 | 1:30 | Punteo musical | Música puente entre cuentos |
+|      6 | 3:00 | Introducción 2 | Horacio Quiroga, La gallina degollada. Los cuatro hijos idiotas, Mazzini y Berta, Bertita |
+|      7 | 9:00 | Lectura 2 | Lectura de La gallina degollada. Dejar respirar el final (no cortar en el clímax) |
+|      8 | 9:00 | Comentario 2 | Terror doméstico: la herencia, la culpa, los reproches. La mirada de los cuatro ojos en los ocho. Comparar con el miedo de Fray Mocho |
+|      9 | 1:30 | Cierre | Despedida, avance próximo ep. Cortina: cortina-cierre (fade out) |
+
+#+BEGIN_COMMENT
+Total estimado: 44:00 — margen amplio dentro del bloque 19:00–20:15.
+El script con la estadística de los García (bloque 3) conviene ensayarlo:
+los números son largos y son el chiste del cuento.
+#+END_COMMENT
+
+Exportar a PDF: M-x org-latex-export-to-pdf
