@@ -1,4 +1,4 @@
-#+TITLE: Grilla de programa — Episodio 8
+#+TITLE: Episodio 8: Mocho y Quiroga
 #+DATE: 2026-10-08
 #+AUTHOR: Sasha
 
