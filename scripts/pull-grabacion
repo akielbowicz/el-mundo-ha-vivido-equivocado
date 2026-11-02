@@ -46,7 +46,8 @@ if [ -f "${LOCAL_DIR}/${FILE}" ]; then
 fi
 
 # Duración esperada desde el sufijo del filename (stream_*_<secs>s.mp3)
-EXPECTED_SECS=$(echo "$FILE" | grep -oE '_[0-9]+s\.mp3$' | tr -dc '0-9')
+# sed para capturar solo los dígitos antes de 's' — tr agarraría el '3' de '.mp3'
+EXPECTED_SECS=$(echo "$FILE" | grep -oE '_[0-9]+s\.mp3$' | sed -E 's/.*_([0-9]+)s\.mp3$/\1/')
 
 echo "  Descargando ${REMOTE_HOST}:${REMOTE_DIR}/${FILE} → ${LOCAL_DIR}/"
 
