@@ -103,7 +103,8 @@ if [ -z "$NUM" ]; then
     exit 0
   fi
 else
-  NUM=$(printf "%03d" "$NUM")
+  # 10# evita que "008" se trate como octal (invalid octal number)
+  NUM=$(printf "%03d" "$((10#$NUM))")
 fi
 
 # --- Encontrar archivo ---
