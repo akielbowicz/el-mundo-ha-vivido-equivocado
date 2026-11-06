@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Portada 010.svg — El mundo ha vivido equivocado
+  Episodio: Episodio 10
+
+  Estructura (capas Inkscape, de abajo hacia arriba):
+    fondo       → gradiente base, reemplazable por cualquier treatment
+    marco       → borde interior fino
+    decoracion  → ZONA LIBRE: ilustración de la tapa (reemplazar los
+                  placeholders por la composición del episodio)
+    titulo      → título + autor (no mover de y=150/180 sin ajustar decoracion)
+    badge       → número de episodio
+
+  Paleta usada: cobalto
+    fondo  #0e2229 → #163540
+    acento #88ccd4 → #a8e0e6
+  Contraste texto/fondo: 11.3:1 (WCAG AA ≥ 4.5:1)
+  Otras: oro-clasico, verde-yerba, noche-azul, vino-tinto, violeta, cobalto, ambar, rosa-bajo, salvia, terracota
+  Forzar una: pasale "palette=<nombre>" al script new-cover.mjs
+  Mantener contraste ≥ 4.5:1 (WCAG AA) si se ajustan colores a mano.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape" viewBox="0 0 400 400" width="400" height="400">
+  <title>Episodio 10</title>
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0e2229"/>
+      <stop offset="100%" style="stop-color:#163540"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#88ccd4"/>
+      <stop offset="100%" style="stop-color:#a8e0e6"/>
+    </linearGradient>
+  </defs>
+
+  <g inkscape:groupmode="layer" id="fondo" inkscape:label="fondo">
+    <rect width="400" height="400" rx="8" fill="url(#bg)"/>
+  </g>
+
+  <g inkscape:groupmode="layer" id="marco" inkscape:label="marco">
+    <rect x="20" y="20" width="360" height="360" rx="6" fill="none" stroke="url(#accent)" stroke-width="1.5" opacity="0.4"/>
+    <rect x="60" y="100" width="280" height="2" fill="url(#accent)" opacity="0.6"/>
+    <rect x="60" y="298" width="280" height="2" fill="url(#accent)" opacity="0.6"/>
+  </g>
+
+  <!-- ZONA LIBRE para ilustración: este grupo es el que un LLM (o vos en
+       Inkscape) reemplaza por la composición del episodio. -->
+  <g inkscape:groupmode="layer" id="decoracion" inkscape:label="decoracion">
+    <!-- cielo: estrellas de fondo -->
+    <g fill="#a8e0e6">
+      <circle cx="96" cy="196" r="1.6" opacity="0.5"/>
+      <circle cx="130" cy="160" r="1.2" opacity="0.4"/>
+      <circle cx="300" cy="170" r="1.6" opacity="0.5"/>
+      <circle cx="326" cy="206" r="1.2" opacity="0.4"/>
+      <circle cx="284" cy="292" r="1.4" opacity="0.45"/>
+      <circle cx="112" cy="284" r="1.4" opacity="0.45"/>
+      <circle cx="248" cy="152" r="1" opacity="0.35"/>
+      <circle cx="156" cy="290" r="1" opacity="0.35"/>
+    </g>
+    <!-- órbita del zapallo-cosmo -->
+    <ellipse cx="200" cy="222" rx="102" ry="30" fill="none" stroke="url(#accent)" stroke-width="1.5" opacity="0.45" transform="rotate(-18 200 222)"/>
+    <!-- lunas sobre la órbita -->
+    <circle cx="105" cy="252" r="4" fill="#a8e0e6" opacity="0.8"/>
+    <circle cx="298" cy="190" r="3" fill="#a8e0e6" opacity="0.65"/>
+    <!-- zapallo: cuerpo -->
+    <circle cx="200" cy="222" r="46" fill="#88ccd4" opacity="0.9"/>
+    <!-- zapallo: gajos -->
+    <g fill="none" stroke="#0e2229" stroke-width="2.5" opacity="0.55">
+      <path d="M 200 176 Q 178 199 178 222 Q 178 245 200 268"/>
+      <path d="M 200 176 Q 222 199 222 222 Q 222 245 200 268"/>
+      <path d="M 200 176 Q 191 199 191 222 Q 191 245 200 268" opacity="0.5"/>
+      <path d="M 200 176 Q 209 199 209 222 Q 209 245 200 268" opacity="0.5"/>
+    </g>
+    <!-- zapallo: cabito -->
+    <path d="M 196 178 q 2 -10 10 -12 q -2 8 -4 13 z" fill="#a8e0e6"/>
+    <!-- destello cósmico -->
+    <circle cx="184" cy="206" r="4" fill="#e8f8fa" opacity="0.85"/>
+    <!-- siluetas de gangsters con sombrero, base -->
+    <g fill="#a8e0e6" opacity="0.3">
+      <ellipse cx="120" cy="342" rx="26" ry="5"/>
+      <path d="M 106 340 q 1 -16 14 -16 q 13 0 14 16 z"/>
+      <rect x="104" y="330" width="32" height="4" rx="2" opacity="0.7"/>
+      <ellipse cx="200" cy="342" rx="26" ry="5"/>
+      <path d="M 186 340 q 1 -16 14 -16 q 13 0 14 16 z"/>
+      <rect x="184" y="330" width="32" height="4" rx="2" opacity="0.7"/>
+      <ellipse cx="280" cy="342" rx="26" ry="5"/>
+      <path d="M 266 340 q 1 -16 14 -16 q 13 0 14 16 z"/>
+      <rect x="264" y="330" width="32" height="4" rx="2" opacity="0.7"/>
+    </g>
+  </g>
+
+  <g inkscape:groupmode="layer" id="titulo" inkscape:label="titulo">
+    <text x="200" y="150" text-anchor="middle" fill="url(#accent)" font-family="Georgia, serif" font-size="22" font-weight="bold">Episodio 10</text>
+    <text x="200" y="180" text-anchor="middle" fill="#a8e0e6" font-family="Georgia, serif" font-size="11" opacity="0.7">Macedonio Fernández · Roberto Arlt</text>
+    <!--
+      Si el título es largo, bajar font-size o partir en dos <text> (y=135 y y=160).
+      El <title> del episodio tiene regla a11y: mantener textos legibles.
+    -->
+  </g>
+
+  <g inkscape:groupmode="layer" id="badge" inkscape:label="badge">
+    <rect x="140" y="260" width="120" height="24" rx="12" fill="url(#accent)" opacity="0.2"/>
+    <text x="200" y="277" text-anchor="middle" fill="url(#accent)" font-family="sans-serif" font-size="11" font-weight="600">EPISODIO 10</text>
+  </g>
+</svg>
