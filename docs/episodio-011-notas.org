@@ -1,0 +1,30 @@
+#+TITLE: Notas episodio 11 — 2026-11-12
+
+Audio: materiales/programas/011-20261112.wav → -dur3893.mp3 (64:53)
+Release: https://github.com/akielbowicz/el-mundo-ha-vivido-equivocado/releases/tag/episodio-011
+Transcript: materiales/programas/011-20261112-transcript.txt (whisper large-v3-turbo, es — nombres propios con errores de transcripción)
+
+* Estructura del programa (timestamps del transcript)
+
+| Desde   | Bloque |
+|---------+---------------------------------------------------------------------|
+| 00:00   | Intro + canción (hermanas Abraham, "Así es Nulán")                  |
+| 00:06:41| Presentación "El puma blanco" — Antonio Di Benedetto (Mendoza 1922–Bs As 1986; detenido por la dictadura en 1976, exilio en España; lectura en DOS partes) |
+| 00:07:49| Lectura "El puma blanco" — parte 1                                  |
+| 00:39:31| Fin de la parte 1 ("eso fue el cuento" — ojo: había dicho que era en dos partes) |
+| 00:40:22| Música: "Oración del remanso" (transcript: "Jorge van der Mole" [sic]) |
+| 00:45:40| Presenta Mika (poeta, primera vez en la sección de poesía, taller de poesía en la biblioteca) — poema de Juan L. Ortiz |
+| 00:46:55| El poema anunciado como "Fui al río" [verificar: título canónico podría ser "El río"] |
+| 00:48:30| Conversación con Mika (poesía, el taller, perderle el miedo)        |
+| 00:53:29| Presentación del relato de Juan José Saer (Serodino, Santa Fe, 1937–París 2005; "le gustaban mucho las comas") — transcript dice "De las siestas de otoño", "está en el libro La mayor" [VERIFICAR: podría ser "La tarde de abril" u otro título] |
+| 00:54:54| Lectura del relato de Saer ("El sol de los días de abril no declina, adelgaza…") |
+| 00:57:21| Fin lectura ("Eso fue el relato")                                   |
+| 00:57:25| Conversación: Di Benedetto y Juan L. Ortiz como maestros de Saer    |
+| 01:03   | Cierre — gracias a Mika y a Matías (consola); zamba final           |
+
+* Confirmado (2026-11-19, con Sasha)
+
+1. Título del relato de Saer: "De las siestas de otoño" (como se anunció en aire; libro La mayor) ✓
+2. Título del poema: "Fui al río" ✓
+3. Crédito de la invitada: "Mica" ✓
+4. "El puma blanco" se leyó COMPLETO en este episodio (la intro anticipaba dos partes, no hizo falta) ✓
