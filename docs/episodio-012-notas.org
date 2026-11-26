@@ -1,0 +1,39 @@
+#+TITLE: Notas episodio 12 — 2026-11-19
+
+Audio: materiales/programas/012-20261119.wav → -dur3683.mp3 (61:24)
+Release: https://github.com/akielbowicz/el-mundo-ha-vivido-equivocado/releases/tag/episodio-012
+Transcript: transcribir desde el WAV (whisper large-v3-turbo, es). Ojo: en la
+primera pasada el modelo entró en loop de alucinación ("¡Suscríbete al canal!")
+a partir de 41:30 y se comió ~20 min de programa. Re-transcribir la cola con
+=-mc 0= por tramos (tail-a 2400s+700s, tail-b 3100s+600s).
+
+* Estructura del programa (timestamps del transcript)
+
+| Desde   | Bloque |
+|---------+---------------------------------------------------------------------|
+| 00:00   | Intro (calor en Suipacha) + primera canción (Nina Suárez)           |
+| 04:03   | Presentación Dana Madera (Carlos Casares 1989; abogada UBA; Lic. en Artes de la Escritura, UNA; proyecto "Los Confines de la Palabra" con Liliana Bodoc; taller de literatura) |
+| 04:57   | Presentación "Todos tenemos una casa" — del libro "Nuestros años pasan de la misma manera" |
+| 05:19   | Lectura "Todos tenemos una casa"                                    |
+| 18:00   | Fin de la lectura + comentario (la terminal, los tiempos muertos, la observación) |
+| ~19:50  | Canción ("yo quiero vivir en vos")                                  |
+| ~22:00  | Conversación: el viaje al interior, el paisaje de la terminal       |
+| ~26:00  | Canción (Las Ligas Menores)                                         |
+| 29:41   | Mica presenta a Roberta Iannamico (generación del 90; Bahía Blanca, vive en Villa Ventana) |
+| 30:49   | Lectura del poema "Dantesca" — Roberta Iannamico                    |
+| 34:49   | Conversación con Mica: el poema narrativo, la caminata, lo "dantesco", poema vs. película |
+| 39:42   | "Antes de seguir con los cuentos, vamos con una canción" (Suárez, "Excursiones") |
+| 43:51   | Mica presenta a Sara Gallardo ("Los galgos, los galgos"; aristocracia terrateniente; tataranieta de Mitre; nació en los 30) |
+| 45:58   | Lectura 1: "Un césped"                                              |
+| 50:29   | Lectura 2: "La casta del sol" (Chivilcoy, 1942; la mujer de la peluca de cerdas de alazán) |
+| 52:44   | Lectura 3: "Flores blancas" (Juan Arias, ubicador de autos en la diagonal) |
+| 53:58   | Cierre: biblioteca de Suipacha, suipacha.gov.ar/radio, equivocados.ar, gracias a Matías |
+| 56:00   | Última canción (Perotá Chingó)                                       |
+
+* A confirmar (2026-11-26, con Sasha)
+
+1. Los tres relatos de Gallardo son parte de una serie de trece historias cortas
+   ("no son micro relatos, pero son trece historias cortas" — dicho en aire).
+2. Título del poema: "Dantesca" ✓ (en aire solo se habla de "lo dantesco"; no se
+   anuncia el título).
+3. Mica leyó el poema; no hubo otro invitado.

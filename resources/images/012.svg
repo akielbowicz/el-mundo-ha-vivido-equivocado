@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Portada 012.svg — El mundo ha vivido equivocado
+  Episodio: Episodio 12 (Dana Madera · Sara Gallardo · Roberta Iannamico)
+
+  Composición: una casa chica con la ventana encendida, entre pastos altos
+  y flores blancas que caen. La casa es el cuento de Dana Madera; el pasto,
+  el de Gallardo; las flores blancas, el último relato y el camino del poema
+  de Iannamico.
+
+  Estructura (capas Inkscape, de abajo hacia arriba):
+    fondo       → gradiente base, reemplazable por cualquier treatment
+    marco       → borde interior fino
+    decoracion  → ZONA LIBRE: ilustración de la tapa (reemplazar los
+                  placeholders por la composición del episodio)
+    titulo      → título + autor (no mover de y=150/180 sin ajustar decoracion)
+    badge       → número de episodio
+
+  Paleta usada: salvia
+    fondo  #232820 → #353d30
+    acento #c2d0b8 → #d8e2d0
+  Contraste texto/fondo: 8.9:1 (WCAG AA ≥ 4.5:1)
+  Otras: oro-clasico, verde-yerba, noche-azul, vino-tinto, violeta, cobalto, ambar, rosa-bajo, salvia, terracota
+  Forzar una: pasale "palette=<nombre>" al script new-cover.mjs
+  Mantener contraste ≥ 4.5:1 (WCAG AA) si se ajustas colores a mano.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape" viewBox="0 0 400 400" width="400" height="400">
+  <title>Episodio 12</title>
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#232820"/>
+      <stop offset="100%" style="stop-color:#353d30"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#c2d0b8"/>
+      <stop offset="100%" style="stop-color:#d8e2d0"/>
+    </linearGradient>
+  </defs>
+
+  <g inkscape:groupmode="layer" id="fondo" inkscape:label="fondo">
+    <rect width="400" height="400" rx="8" fill="url(#bg)"/>
+  </g>
+
+  <g inkscape:groupmode="layer" id="marco" inkscape:label="marco">
+    <rect x="20" y="20" width="360" height="360" rx="6" fill="none" stroke="url(#accent)" stroke-width="1.5" opacity="0.4"/>
+    <rect x="60" y="100" width="280" height="2" fill="url(#accent)" opacity="0.6"/>
+    <rect x="60" y="298" width="280" height="2" fill="url(#accent)" opacity="0.6"/>
+  </g>
+
+  <!-- ZONA LIBRE para ilustración: este grupo es el que un LLM (o vos en
+       Inkscape) reemplaza por la composición del episodio. -->
+  <g inkscape:groupmode="layer" id="decoracion" inkscape:label="decoracion">
+    <!-- flores blancas cayendo -->
+    <g fill="#f2f6ee">
+      <circle cx="112" cy="176" r="3" opacity="0.85"/>
+      <circle cx="140" cy="200" r="2.4" opacity="0.6"/>
+      <circle cx="96" cy="212" r="2.2" opacity="0.55"/>
+      <circle cx="286" cy="182" r="2.8" opacity="0.8"/>
+      <circle cx="308" cy="206" r="2.2" opacity="0.6"/>
+      <circle cx="262" cy="170" r="2" opacity="0.5"/>
+      <circle cx="126" cy="238" r="2.2" opacity="0.5"/>
+      <circle cx="276" cy="240" r="2" opacity="0.45"/>
+      <circle cx="200" cy="164" r="2" opacity="0.4"/>
+    </g>
+    <!-- pastos altos -->
+    <g fill="none" stroke="url(#accent)" stroke-width="2" stroke-linecap="round" opacity="0.55">
+      <path d="M 104 274 q 4 -18 -2 -30"/>
+      <path d="M 112 274 q 6 -20 2 -34"/>
+      <path d="M 120 274 q 2 -14 -4 -22"/>
+      <path d="M 288 274 q -4 -18 2 -30"/>
+      <path d="M 280 274 q -6 -20 -2 -34"/>
+      <path d="M 272 274 q -2 -14 4 -22"/>
+    </g>
+    <!-- casa -->
+    <g>
+      <path d="M 164 216 L 200 186 L 236 216 Z" fill="url(#accent)"/>
+      <rect x="172" y="214" width="56" height="42" rx="2" fill="none" stroke="url(#accent)" stroke-width="2.5"/>
+      <!-- ventana encendida -->
+      <rect x="182" y="224" width="15" height="14" rx="1.5" fill="#f0dc9a" opacity="0.9"/>
+      <path d="M 189.5 224 v 14 M 182 231 h 15" stroke="#232820" stroke-width="1.2" opacity="0.7"/>
+      <!-- puerta -->
+      <path d="M 208 256 v -16 a 6 6 0 0 1 12 0 v 16" fill="none" stroke="url(#accent)" stroke-width="2"/>
+      <!-- humo de la chimenea -->
+      <g fill="none" stroke="url(#accent)" stroke-width="1.6" opacity="0.5" stroke-linecap="round">
+        <path d="M 226 190 q 6 -8 1 -16 q -4 -7 3 -13"/>
+        <path d="M 232 188 q 5 -7 1 -14"/>
+      </g>
+    </g>
+    <!-- línea de tierra -->
+    <path d="M 92 258 q 54 6 108 0 q 54 -6 108 0" fill="none" stroke="url(#accent)" stroke-width="1.5" opacity="0.35"/>
+  </g>
+
+  <g inkscape:groupmode="layer" id="titulo" inkscape:label="titulo">
+    <text x="200" y="150" text-anchor="middle" fill="url(#accent)" font-family="Georgia, serif" font-size="22" font-weight="bold">Episodio 12</text>
+    <text x="200" y="180" text-anchor="middle" fill="#d8e2d0" font-family="Georgia, serif" font-size="10" opacity="0.7">Dana Madera · Sara Gallardo · Roberta Iannamico</text>
+    <!--
+      Si el título es largo, bajar font-size o partir en dos <text> (y=135 y y=160).
+      El <title> del episodio tiene regla a11y: mantener textos legibles.
+    -->
+  </g>
+
+  <g inkscape:groupmode="layer" id="badge" inkscape:label="badge">
+    <rect x="140" y="260" width="120" height="24" rx="12" fill="url(#accent)" opacity="0.2"/>
+    <text x="200" y="277" text-anchor="middle" fill="url(#accent)" font-family="sans-serif" font-size="11" font-weight="600">EPISODIO 12</text>
+  </g>
+</svg>
