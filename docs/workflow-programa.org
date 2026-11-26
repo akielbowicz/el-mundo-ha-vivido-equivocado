@@ -47,6 +47,34 @@ Comandos útiles:
 | Logs pull local | ~journalctl --user -u pull-grabacion.service~ |
 | Desactivar | ~systemctl --user disable --now pull-grabacion.timer~ |
 
+** Drift conocido: timer local de grabación habilitado (detectado 2026-11-26)
+
+Estado esperado: VM primaria, ~download-stream.timer~ local *deshabilitado*.
+Estado observado el 2026-11-26: ~systemctl --user is-enabled download-stream.timer~
+responde ~enabled~ — contradice el setup documentado arriba.
+
+- Síntoma: al ser ~Persistent=true~, si el disparo de las 18:45 se perdió
+  (máquina apagada/suspendida), systemd lo recupera al volver; ese catch-up
+  corre antes de que haya DNS y falla al instante:
+  : Failed to resolve hostname radio01.ferozo.com: Temporary failure in name resolution
+  : Error opening input file https://radio01.ferozo.com/proxy/ra01001031?mp=/stream
+  Visto el 2026-11-19 20:16 y el 2026-11-26 20:11 (arranque 12:02, DNS aún no listo).
+- Impacto: ninguno sobre la grabación del jueves (la hace la VM), pero el backup
+  local lleva ≥2 jueves sin grabar y falla en silencio; además duplica
+  descarga de ancho de banda cuando sí funciona.
+- No apilable basura: ~scripts/download-stream~ borra el parcial si ffmpeg falla
+  (no quedan ~stream_*_5400s.mp3~ vacíos en ~materiales/grabaciones/~).
+- Notificaciones mudas: ~NTFY_URL~ solo se lee si está exportada en el entorno
+  del service; los units ~download-stream.service~ y ~pull-grabacion.service~
+  no la setean, así que un fallo nunca avisa.
+- Recordatorio de timing (no es falla): ~pull-grabacion.timer~ corre recién a
+  las 20:30. Entre 20:15 (fin de grabación en la VM) y 20:30 el audio existe
+  solo en la VM. Si se necesita antes: ~just pull-grabacion~ a mano.
+- Sin acción tomada: se dejó documentado a pedido (no se deshabilitó el timer
+  ni se agregó ~NTFY_URL~). Verificación rápida:
+  : systemctl --user is-enabled download-stream.timer
+  : journalctl --user -u download-stream.service --since "-21 days" | grep -c 'name resolution'
+
 ** Timer de prueba diario (VM)
 
 Para verificar que la cadena funciona sin esperar al jueves: la VM tiene un
