@@ -1,0 +1,49 @@
+#+TITLE: Notas episodio 13 — 2026-11-26
+
+Audio: materiales/programas/013-20261126.wav → -dur3769.mp3 (62:49)
+Release: https://github.com/akielbowicz/el-mundo-ha-vivido-equivocado/releases/tag/episodio-013
+Transcript: materiales/programas/013-20261126-transcript.txt (whisper large-v3-turbo
+con -oj, es; timestamps regenerados desde el JSON). Ojo: mismo drift de loop de
+alucinación que en el 012 — "¡Suscríbete al canal!" y "Vamos con una canción"
+repetidos durante las secciones musicales (los loops quedan en el txt; el
+contenido de voz está completo).
+Nombres mal transcritos en el transcript: "Miguel Viriante/Variante" → Briante,
+"Mika" → Mica, "Héctor Bielten Perley/Bieltenberle" → Héctor Viel Temperley,
+"Zupacha" → Suipacha, "Roberto Bartlett" → Roberto Arlt.
+
+* Estructura del programa (timestamps del transcript)
+
+| Desde   | Bloque |
+|---------+---------------------------------------------------------------------|
+| 00:00   | Intro (calor; se presentan los tres autores: Piglia, Briante y Mica con un poema de Héctor Viel Temperley; "todos de más o menos la época de los 60 en adelante") |
+| 00:01   | Canción 1 (no identificable — cubierta por el loop de alucinación)   |
+| 00:14   | Lectura "Kincón" de Miguel Briante, parte 1 (anunciado en aire como "cuento King Kong"; narrador: el gigante al que el pueblo apoda King Kong; la Juana, el espejo, la comisaría) |
+| 15:57   | Fin parte 1 + canción: Julieta Laso — tango "La última curda" (Cátulo Castillo) |
+| 18:38   | Lectura "Kincón" parte 2 (el sable, la pelota rota, la pelea final con los tres policías; "bramando, esquivando los sables, bailoteando") |
+| 26:38   | Fin lectura + canción: Javier Malosetti junto a Lito Vitale tocando "Clini" [sic] |
+| 32:35   | Comentario del cuento con Mica: narrador que ya está muerto / desdoble de personalidades contra la máscara que le impone el pueblo; los paréntesis del texto; fue el primer cuento de Briante ("bien joven"); el lenguaje y "estas palabras son mías, no son mías"; volver a leer/reescuchar |
+| 38:39   | Mica presenta el poema "El nadador" — Héctor Viel Temperley: amigo de Briante, los dos periodistas; Viel Temperley en publicidad, después vida de campo; escribió desde los 50; poco conocido ("aparentemente solo una persona pudo entrevistarlo" — a verificar); libro "Croll" (como el estilo de natación) |
+| 40:16   | Lectura del poema "El nadador" (Mica): "Soy el nadador, Señor, soy el hombre que nada..." |
+| 42:01   | Comentario: poema súper sonoro, la repetición, el agradecimiento (el señor, las aguas, el propio cuerpo), las brazadas |
+| 43:01   | Canción: Noelia Sin Cunas — "Galopa" [sic] |
+| 46:11   | Presentación "El nadador" — Ricardo Piglia: desde los 60, crítico e historiador de la literatura argentina, reivindicó a Roberto Arlt; cuento homónimo al poema |
+| 47:17   | Lectura "El nadador" (el polaco, el barco hundido, la moneda griega) |
+| 57:49   | Fin lectura + cierre: radio pública de Suipacha, equivocados.ar, gracias a Matías (aguante con el calor), gracias a Mica |
+| 58:55   | Canción final: tango "Nada" (José Dames / Homero Expósito, letra confirmada por el transcript) — artista no identificado |
+
+* A confirmar (2026-11-27)
+
+1. Título del cuento de Briante: en aire se lo anunció y cerró como "King Kong"
+   (apodo del protagonista). El cuento premiado de Briante (1961, Concurso de
+   Cuentistas Americanos de El Escarabajo de Oro; jurado Roa Bastos, Guido,
+   Sáenz, Costantini) se titula "Kincón", y la novela de 1975 se basa en él.
+   La página del episodio usa "Kincón". Confirmar cuál de los dos textos se
+   leyó exactamente.
+2. Canción 1 (00:01–00:14): título no recuperable (loop de alucinación).
+3. Canción 3 (~26:38): "Javier Malosetti junto a Lito Vitale tocando Clini" [sic] — tema a identificar.
+4. Canción ~43:01: "Noelia Sin Cunas tocando galopa" [sic] — artista/tema a confirmar.
+5. Canción final (58:55): es el tango "Nada" (Dames/Expósito); falta quién lo canta.
+6. Viel Temperley "solo una persona pudo entrevistarlo": dato dicho en aire por
+   Mica, no verificado.
+7. Libro de Viel Temperley mencionado: "Croll" (transcript: "Kroll, como el
+   estilo de natación").

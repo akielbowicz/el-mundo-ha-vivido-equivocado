@@ -2,7 +2,7 @@
 title: "Episodio 13"
 date: "2026-11-26"
 status: published
-description: "Leemos 'Kincón' de Miguel Briante, 'El nadador' de Ricardo Piglia y el poema 'El nadador' de Héctor Viel Temperley — dos 'El nadador' en el mismo programa"
+description: "Leemos 'Kincón' de Miguel Briante, 'El nadador' de Ricardo Piglia y el poema 'El nadador' de Héctor Viel Temperley — dos 'El nadador' en el mismo programa —, con Mica en la sección de poesía"
 authors:
   - "Sasha"
 duration: "62:49"
@@ -13,6 +13,8 @@ tags:
   - miguel-briante
   - ricardo-piglia
   - hector-viel-temperley
+  - mica
+  - poesia
 ---
 
 # Kincón
